@@ -185,7 +185,11 @@ class InteractionAgentRuntime:
         else:
             raise RuntimeError("Reached tool iteration limit without final response")
 
-        if not summary.user_messages and not summary.last_assistant_text:
+        if (
+            not summary.user_messages
+            and not summary.last_assistant_text
+            and "wait" not in summary.tool_names
+        ):
             logger.warning("Interaction loop exited without assistant content")
 
         return summary
