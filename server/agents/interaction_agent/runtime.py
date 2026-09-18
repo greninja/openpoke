@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Set
 
 from .agent import build_system_prompt, prepare_message_with_history
 from .tools import ToolResult, get_tool_schemas, handle_tool_call
+from ..tool_protocol import describes_tool_call
 from ...config import get_settings
 from ...services.conversation import get_conversation_log, get_working_memory_log
 from ...openrouter_client import request_chat_completion
@@ -54,7 +55,8 @@ class InteractionAgentRuntime:
         self.settings = settings
         self.conversation_log = get_conversation_log()
         self.working_memory_log = get_working_memory_log()
-        self.tool_schemas = get_tool_schemas()
+        self.tool_schemas = [tool for tool in get_tool_schemas()
+                             if tool["function"]["name"] != "send_draft"]
 
         if not self.api_key:
             raise ValueError(
@@ -140,6 +142,7 @@ class InteractionAgentRuntime:
         """Iteratively query the LLM until it issues a final response."""
 
         summary = _LoopSummary()
+        successful_calls = {}
 
         for iteration in range(self.MAX_TOOL_ITERATIONS):
             response = await self._make_llm_call(system_prompt, messages)
@@ -161,8 +164,18 @@ class InteractionAgentRuntime:
             messages.append(assistant_entry)
 
             if not parsed_tool_calls:
+                if describes_tool_call(assistant_content, (
+                    "send_message_to_agent", "send_message_to_user", "send_draft", "wait"
+                )) or (not assistant_content and not summary.tool_names):
+                    summary.last_assistant_text = ""
+                    messages.append({"role": "user", "content":
+                        "No tool was invoked. Use actual API tool calls, not code or tool names "
+                        "in reply text. Delegate stored email drafts and sends to an execution "
+                        "agent. Otherwise provide the answer, or call wait if no reply is needed."})
+                    continue
                 break
 
+            round_succeeded = True
             for tool_call in parsed_tool_calls:
                 summary.tool_names.append(tool_call.name)
 
@@ -171,7 +184,13 @@ class InteractionAgentRuntime:
                     if isinstance(agent_name, str) and agent_name:
                         summary.execution_agents.add(agent_name)
 
-                result = self._execute_tool(tool_call)
+                key = (tool_call.name, json.dumps(tool_call.arguments, sort_keys=True))
+                result = successful_calls.get(key)
+                if result is None:
+                    result = self._execute_tool(tool_call)
+                    if result.success:
+                        successful_calls[key] = result
+                round_succeeded = round_succeeded and result.success
 
                 if result.user_message:
                     summary.user_messages.append(result.user_message)
@@ -182,6 +201,18 @@ class InteractionAgentRuntime:
                     "content": self._format_tool_result(tool_call, result),
                 }
                 messages.append(tool_message)
+
+            # These tools deliver messages or queue work; their success payloads
+            # contain no new information requiring another model decision.
+            # Execute the whole round (including independent delegations), then
+            # finish. Failed calls still go back to the model for correction.
+            if round_succeeded and any(call.name in {
+                "send_message_to_agent", "send_draft", "wait"
+            } for call in parsed_tool_calls) and all(call.name in {
+                "send_message_to_agent", "send_message_to_user", "send_draft", "wait"
+            } for call in parsed_tool_calls):
+                summary.last_assistant_text = ""
+                break
         else:
             raise RuntimeError("Reached tool iteration limit without final response")
 
@@ -290,6 +321,10 @@ class InteractionAgentRuntime:
     # Execute tool calls with error handling and logging, returning standardized results
     def _execute_tool(self, tool_call: _ToolCall) -> ToolResult:
         """Execute a tool call and convert low-level errors into structured results."""
+        if tool_call.name == "send_draft":
+            return ToolResult(success=False, payload={"error":
+                "Stored drafts are created by execution agents and displayed automatically. "
+                "Use send_message_to_agent to create or revise a draft."})
 
         if "__invalid_arguments__" in tool_call.arguments:
             error = tool_call.arguments["__invalid_arguments__"]

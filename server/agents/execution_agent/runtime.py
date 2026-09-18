@@ -3,10 +3,11 @@
 import inspect
 import json
 from typing import Dict, Any, List, Optional, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .agent import ExecutionAgent
 from .tools import get_tool_schemas, get_tool_registry
+from ..tool_protocol import describes_tool_call
 from ...config import get_settings
 from ...openrouter_client import request_chat_completion
 from ...logging_config import logger
@@ -20,6 +21,8 @@ class ExecutionResult:
     response: str
     error: Optional[str] = None
     tools_executed: List[str] = None
+    structured_results: List[Dict[str, Any]] = field(default_factory=list)
+    draft_only: bool = False
 
 
 class ExecutionAgentRuntime:
@@ -49,6 +52,9 @@ class ExecutionAgentRuntime:
             # Start conversation with the instruction
             messages = [{"role": "user", "content": instructions}]
             tools_executed: List[str] = []
+            structured_results: List[Dict[str, Any]] = []
+            successful_writes = {}
+            had_tool_error = False
             final_response: Optional[str] = None
 
             for iteration in range(self.MAX_TOOL_ITERATIONS):
@@ -73,7 +79,13 @@ class ExecutionAgentRuntime:
                 messages.append(assistant_entry)
 
                 if not parsed_tool_calls:
-                    final_response = assistant_entry["content"] or "No action required."
+                    if describes_tool_call(assistant_entry["content"], self.tool_registry) or not assistant_entry["content"].strip():
+                        messages.append({"role": "user", "content":
+                            "No tool was invoked in that response. Use actual API tool calls "
+                            "instead of describing or printing them. If the task is already "
+                            "complete, report the observed result accurately."})
+                        continue
+                    final_response = assistant_entry["content"]
                     break
 
                 for tool_call in parsed_tool_calls:
@@ -97,7 +109,36 @@ class ExecutionAgentRuntime:
                     tools_executed.append(tool_name)
                     logger.info(f"[{self.agent.name}] Executing tool: {tool_name}")
 
-                    success, result = await self._execute_tool(tool_name, tool_args)
+                    key = (tool_name, json.dumps(tool_args, sort_keys=True))
+                    if key in successful_writes:
+                        success, result = True, successful_writes[key]
+                    else:
+                        success, result = await self._execute_tool(tool_name, tool_args)
+                        if success and tool_name in {
+                            "gmail_create_draft", "gmail_execute_draft", "gmail_delete_draft"
+                        }:
+                            successful_writes[key] = result
+                    had_tool_error = had_tool_error or not success
+
+                    structured_result = self._build_structured_result(
+                        tool_name,
+                        success,
+                        result,
+                        tool_args,
+                    )
+                    if structured_result is not None and not any(
+                        item["draft_id"] == structured_result["draft_id"]
+                        for item in structured_results
+                    ):
+                        structured_results.append(structured_result)
+                    if success and tool_name in {"gmail_execute_draft", "gmail_delete_draft"}:
+                        structured_results = [item for item in structured_results
+                                              if item["draft_id"] != str(tool_args.get("draft_id"))]
+                        successful_writes = {
+                            cached_key: cached_result for cached_key, cached_result in successful_writes.items()
+                            if not (cached_key[0] == "gmail_create_draft" and
+                                    self._find_draft_id(cached_result) == str(tool_args.get("draft_id")))
+                        }
 
                     if success:
                         logger.info(f"[{self.agent.name}] Tool {tool_name} completed successfully")
@@ -132,7 +173,10 @@ class ExecutionAgentRuntime:
                 agent_name=self.agent.name,
                 success=True,
                 response=final_response,
-                tools_executed=tools_executed
+                tools_executed=tools_executed,
+                structured_results=structured_results,
+                draft_only=bool(structured_results) and not had_tool_error and
+                    set(tools_executed) <= {"gmail_create_draft", "gmail_delete_draft"},
             )
 
         except Exception as e:
@@ -147,6 +191,57 @@ class ExecutionAgentRuntime:
                 response=failure_text,
                 error=error_msg
             )
+
+    @classmethod
+    def _build_structured_result(
+        cls,
+        tool_name: str,
+        success: bool,
+        result: Any,
+        arguments: Dict[str, Any],
+    ) -> Optional[Dict[str, Any]]:
+        """Create backend-routable results from successful tool calls."""
+
+        if tool_name != "gmail_create_draft" or not success:
+            return None
+        if isinstance(result, dict) and result.get("error"):
+            return None
+
+        draft_id = cls._find_draft_id(result)
+        required_fields = ("recipient_email", "subject", "body")
+        if not draft_id or any(field not in arguments for field in required_fields):
+            return None
+
+        return {
+            "type": "draft_ready",
+            "draft_id": draft_id,
+            "to": arguments["recipient_email"],
+            "subject": arguments["subject"],
+            "body": arguments["body"],
+        }
+
+    @classmethod
+    def _find_draft_id(cls, value: Any) -> Optional[str]:
+        """Find the draft identifier in provider responses with nested envelopes."""
+
+        if not isinstance(value, dict):
+            return None
+
+        for key in ("draft_id", "draftId"):
+            candidate = value.get(key)
+            if candidate is not None:
+                return str(candidate)
+
+        for key in ("draft", "data", "result", "response_data"):
+            candidate = cls._find_draft_id(value.get(key))
+            if candidate:
+                return candidate
+
+        candidate = value.get("id")
+        if candidate is not None:
+            return str(candidate)
+
+        return None
 
     # Execute OpenRouter API call with system prompt, messages, and optional tool schemas
     async def _make_llm_call(self, system_prompt: str, messages: List[Dict], with_tools: bool) -> Dict:
@@ -231,6 +326,11 @@ class ExecutionAgentRuntime:
             result = tool_func(**arguments)
             if inspect.isawaitable(result):
                 result = await result
+            if isinstance(result, dict) and (
+                result.get("error") or result.get("success") is False or
+                result.get("successful") is False or result.get("status") == "error"
+            ):
+                return False, result
             return True, result
         except Exception as e:
             return False, {"error": str(e)}

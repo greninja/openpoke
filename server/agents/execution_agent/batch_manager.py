@@ -6,10 +6,11 @@ import asyncio
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from .runtime import ExecutionAgentRuntime, ExecutionResult
 from ...logging_config import logger
+from ...services.draft_delivery import display_draft_for_review
 
 
 @dataclass
@@ -85,6 +86,9 @@ class ExecutionBatchManager:
         finally:
             self._pending.pop(request_id, None)
 
+        for structured_result in result.structured_results:
+            structured_result.setdefault("task_id", request_id)
+
         await self._complete_execution(batch_id, result, agent_name)
         return result
 
@@ -123,7 +127,7 @@ class ExecutionBatchManager:
     ) -> None:
         """Record the execution result and dispatch when the batch drains."""
 
-        dispatch_payload: Optional[str] = None
+        completed_results: Optional[List[ExecutionResult]] = None
 
         async with self._batch_lock:
             state = self._batch_state
@@ -135,13 +139,19 @@ class ExecutionBatchManager:
             state.pending -= 1
 
             if state.pending == 0:
-                dispatch_payload = self._format_batch_payload(state.results)
+                completed_results = list(state.results)
                 agent_names = [entry.agent_name for entry in state.results]
                 logger.info(f"Execution batch completed: {', '.join(agent_names)}")
                 self._batch_state = None
 
-        if dispatch_payload:
-            await self._dispatch_to_interaction_agent(dispatch_payload)
+        if completed_results is None:
+            return
+
+        interaction_results = self._deliver_structured_results(completed_results)
+        if interaction_results:
+            await self._dispatch_to_interaction_agent(
+                self._format_batch_payload(interaction_results)
+            )
 
     # Return list of currently pending execution requests for monitoring purposes
     def get_pending_executions(self) -> List[Dict[str, str]]:
@@ -176,6 +186,57 @@ class ExecutionBatchManager:
             response_text = (result.response or "(no response provided)").strip()
             entries.append(f"[{status}] {result.agent_name}: {response_text}")
         return "\n".join(entries)
+
+    def _deliver_structured_results(
+        self,
+        results: List[ExecutionResult],
+    ) -> List[ExecutionResult]:
+        """Display known result types and return results that still need LLM judgment."""
+
+        interaction_results: List[ExecutionResult] = []
+
+        for result in results:
+            handled, unknown = self._deliver_result(result)
+            # A draft must not hide other outcomes or failures from a mixed task.
+            if not handled or unknown or not result.success or not result.draft_only:
+                interaction_results.append(result)
+
+        return interaction_results
+
+    def _deliver_result(self, result: ExecutionResult) -> Tuple[bool, bool]:
+        handled = False
+        unknown = False
+
+        for structured_result in result.structured_results:
+            if structured_result.get("type") != "draft_ready":
+                unknown = True
+                continue
+
+            if not self._valid_draft_ready(structured_result):
+                unknown = True
+                continue
+
+            try:
+                display_draft_for_review(
+                    agent_name=result.agent_name,
+                    task_id=structured_result["task_id"],
+                    draft_id=structured_result["draft_id"],
+                    to=structured_result["to"],
+                    subject=structured_result["subject"],
+                    body=structured_result["body"],
+                )
+            except Exception:
+                logger.exception("Draft delivery failed; forwarding result to interaction agent")
+                unknown = True
+                continue
+            handled = True
+
+        return handled, unknown
+
+    @staticmethod
+    def _valid_draft_ready(result: Dict[str, Any]) -> bool:
+        required = ("task_id", "draft_id", "to", "subject", "body")
+        return all(isinstance(result.get(field), str) and result[field].strip() for field in required)
 
     # Forward combined execution results to interaction agent for user response generation
     async def _dispatch_to_interaction_agent(self, payload: str) -> None:
