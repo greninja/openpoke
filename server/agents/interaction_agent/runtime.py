@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional, Set
 from .agent import build_system_prompt, prepare_message_with_history
 from .tools import ToolResult, get_tool_schemas, handle_tool_call
 from ..tool_protocol import describes_tool_call
+from .metrics import TurnType, record_llm_call
 from ...config import get_settings
 from ...services.conversation import get_conversation_log, get_working_memory_log
 from ...openrouter_client import request_chat_completion
@@ -77,7 +78,7 @@ class InteractionAgentRuntime:
             )
 
             logger.info("Processing user message through interaction agent")
-            summary = await self._run_interaction_loop(system_prompt, messages)
+            summary = await self._run_interaction_loop(system_prompt, messages, "user")
 
             final_response = self._finalize_response(summary)
 
@@ -112,7 +113,7 @@ class InteractionAgentRuntime:
             )
 
             logger.info("Processing execution agent results")
-            summary = await self._run_interaction_loop(system_prompt, messages)
+            summary = await self._run_interaction_loop(system_prompt, messages, "agent")
 
             final_response = self._finalize_response(summary)
 
@@ -138,6 +139,7 @@ class InteractionAgentRuntime:
         self,
         system_prompt: str,
         messages: List[Dict[str, Any]],
+        turn_type: TurnType,
     ) -> _LoopSummary:
         """Iteratively query the LLM until it issues a final response."""
 
@@ -145,7 +147,7 @@ class InteractionAgentRuntime:
         successful_calls = {}
 
         for iteration in range(self.MAX_TOOL_ITERATIONS):
-            response = await self._make_llm_call(system_prompt, messages)
+            response = await self._make_llm_call(system_prompt, messages, turn_type)
             assistant_message = self._extract_assistant_message(response)
 
             assistant_content = (assistant_message.get("content") or "").strip()
@@ -238,6 +240,7 @@ class InteractionAgentRuntime:
         self,
         system_prompt: str,
         messages: List[Dict[str, Any]],
+        turn_type: TurnType,
     ) -> Dict[str, Any]:
         """Make an LLM call via OpenRouter."""
 
@@ -245,6 +248,7 @@ class InteractionAgentRuntime:
             "Interaction agent calling LLM",
             extra={"model": self.model, "tools": len(self.tool_schemas)},
         )
+        record_llm_call(turn_type)
         return await request_chat_completion(
             model=self.model,
             messages=messages,

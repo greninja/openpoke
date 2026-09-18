@@ -33,7 +33,7 @@ class InteractionTests(unittest.IsolatedAsyncioTestCase):
         args = {"agent_name": "Erin", "instructions": "Send approved D10"}
         runtime = self.runtime([response(("send_message_to_agent", args),
                                          ("send_message_to_agent", args))])
-        await runtime._run_interaction_loop("", [])
+        await runtime._run_interaction_loop("", [], "user")
         self.assertEqual(runtime._make_llm_call.await_count, 1)
         self.assertEqual(runtime._execute_tool.call_count, 1)
 
@@ -42,7 +42,7 @@ class InteractionTests(unittest.IsolatedAsyncioTestCase):
             response(("send_message_to_user", {"message": "I will draft it."})),
             response(("send_message_to_agent", {"agent_name": "Erin", "instructions": "Draft"})),
         ])
-        await runtime._run_interaction_loop("", [])
+        await runtime._run_interaction_loop("", [], "user")
         self.assertEqual(runtime._make_llm_call.await_count, 2)
 
     async def test_error_can_be_corrected_without_repeating_successful_work(self):
@@ -50,7 +50,7 @@ class InteractionTests(unittest.IsolatedAsyncioTestCase):
                          ("send_message_to_agent", {"agent_name": "Erin", "instructions": "Draft"}))
         runtime = self.runtime([reply, reply])
         runtime._execute_tool.side_effect = [ToolResult(True), ToolResult(False), ToolResult(True)]
-        await runtime._run_interaction_loop("", [])
+        await runtime._run_interaction_loop("", [], "user")
         self.assertEqual(runtime._make_llm_call.await_count, 2)
         self.assertEqual(runtime._execute_tool.call_count, 3)
 
@@ -59,7 +59,7 @@ class InteractionTests(unittest.IsolatedAsyncioTestCase):
             {"choices": [{"message": {"content": "print(send_message_to_agent(agent_name='Erin'))"}}]},
             response(("send_message_to_agent", {"agent_name": "Erin", "instructions": "Draft"})),
         ])
-        result = await runtime._run_interaction_loop("", [])
+        result = await runtime._run_interaction_loop("", [], "user")
         self.assertEqual(runtime._make_llm_call.await_count, 2)
         self.assertEqual(runtime._execute_tool.call_count, 1)
         self.assertEqual(result.last_assistant_text, "")
