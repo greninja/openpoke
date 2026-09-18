@@ -44,8 +44,11 @@ the normal interaction/execution loops and batch manager. Agent state is
 discarded afterward. `--limit 10` runs the first ten fixture events.
 
 It writes `workload.json` beside the counts report, with event timing, expected
-outcomes, tool actions, final mailbox state and conversation text. Unlike
-`calls.jsonl`, this file **does contain the benchmark messages and replies**.
+outcomes, tool actions, final mailbox state and conversation text. It also writes
+`outcomes.json`: one row per user message with `PASS`, `FAIL`, or
+`MANUAL_REVIEW`, the expected outcomes, automatic checks, and supporting
+evidence. Unlike `calls.jsonl`, these files **do contain benchmark messages,
+replies, and simulated email contents**.
 
 Scope and limits (keep these identical for before/after comparisons):
 
@@ -96,10 +99,12 @@ version). Both receive the same completed draft. The check requires the exact
 draft to be displayed once, one stored draft, and no email sent. This isolates
 draft delivery from differing searches, model plans, and later user turns.
 
-Full runs also check actual sends after scripted approvals and whether the two
-reminders were created. These checks do not grade message wording, reminder
-timing, or all natural-language outcomes. To check an older saved run without
-changing it:
+Full runs automatically check stored drafts, their contents and active versions,
+simulated sends, send ordering after approval, and reminder timing. Natural
+language answers and subjective requirements such as warmer wording remain
+`MANUAL_REVIEW`, with the relevant visible replies included. A message passes
+only when all of its automatic checks pass. To generate a checklist for a saved
+run:
 
 ```sh
 python3 benchmarks/interaction_llm_calls/check_outcomes.py /path/to/workload.json
@@ -133,6 +138,27 @@ Updated orchestration:
   --server-root . --model google/gemini-2.5-flash-lite
 ```
 
+## Compare draft delivery on the same code
+
+Run the current code twice with identical fixtures and model settings. The first
+run forwards completed draft results through the interaction LLM:
+
+```sh
+../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py \
+  --server-root . --draft-delivery interaction
+```
+
+The second run displays structured drafts directly:
+
+```sh
+../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py \
+  --server-root . --draft-delivery direct
+```
+
+The selected `draft_delivery` mode is recorded in both reports.
+
 Add `--smoke` to either workload command for a local check with fake model
 responses and no network calls. For live runs, set `OPENROUTER_API_KEY` in the
 environment or in `openpoke-dev/.env`; the original folder's `.env` is not loaded.
@@ -146,8 +172,10 @@ Original source files and application data are never modified.
 Reports include `server_root`, `server_commit`, `server_dirty` (tracked changes),
 and `model`. Smoke reports name the selected model but do not actually call it.
 Historical reports keep their original paths and commit metadata, where available;
-consolidating the folders does not rewrite old results. Compare successful task
-outcomes as well as call counts; the existing checks do not grade every task.
+consolidating the folders does not rewrite old results. Historical runs made
+before evidence snapshots were added remain `MANUAL_REVIEW` where the checker
+cannot establish the state at that message. Compare the 55-message checklist as
+well as call counts.
 
 ## Verify counting without model calls
 

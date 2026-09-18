@@ -62,7 +62,8 @@ def main() -> int:
         workload = json.loads(workload_path.read_text(encoding="utf-8"))
         report["task_outcomes"] = workload.get("task_outcomes", "not_evaluated")
         report["mode"] = workload.get("mode")
-        for field in ("server_root", "server_commit", "server_dirty", "model"):
+        report["message_checks"] = workload.get("message_checks", {}).get("summary")
+        for field in ("server_root", "server_commit", "server_dirty", "model", "draft_delivery"):
             report[field] = workload.get(field)
     report_path = run_dir / "report.json"
     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

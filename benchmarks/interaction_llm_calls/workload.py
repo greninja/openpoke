@@ -2,6 +2,7 @@
 
 import argparse
 import asyncio
+from copy import deepcopy
 from contextvars import ContextVar
 from dataclasses import asdict
 from datetime import timedelta
@@ -15,7 +16,7 @@ import tempfile
 import time
 
 from sample_tools import Mailbox, current_event
-from check_outcomes import check as check_outcomes
+from check_outcomes import evaluate as check_outcomes
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -65,10 +66,40 @@ def target_metadata(args):
         ).strip()
     return {"server_root": str(root), "server_commit": git("rev-parse", "HEAD"),
             "server_dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
-            "model": args.model}
+            "model": args.model, "draft_delivery": args.draft_delivery}
 
 
-async def replay(events, invoke, mailbox, fixture, timeout, records=None):
+def configure_draft_delivery(batch_manager_class, mode):
+    """Select the only behavior that differs between comparison runs."""
+    supports_direct = hasattr(batch_manager_class, "_deliver_structured_results")
+    if mode == "direct":
+        if not supports_direct:
+            raise RuntimeError("Target does not support direct draft-ready delivery")
+        return
+    if mode != "interaction":
+        raise ValueError(f"Unknown draft delivery mode: {mode}")
+    if supports_direct:
+        original_format = batch_manager_class._format_batch_payload
+
+        def format_with_drafts(self, results):
+            payload = original_format(self, results)
+            drafts = []
+            for result in results:
+                for item in getattr(result, "structured_results", []):
+                    if item.get("type") == "draft_ready":
+                        drafts.append(
+                            "Draft ready for user review.\n"
+                            f"To: {item.get('to', '')}\n"
+                            f"Subject: {item.get('subject', '')}\n\n"
+                            f"{item.get('body', '')}"
+                        )
+            return "\n".join([payload, *drafts])
+
+        batch_manager_class._format_batch_payload = format_with_drafts
+        batch_manager_class._deliver_structured_results = lambda self, results: list(results)
+
+
+async def replay(events, invoke, mailbox, fixture, timeout, records=None, capture_evidence=None):
     """Release timed overlaps; use drained work, not an acknowledgement, as completion.
 
     Run in a dedicated event loop: all other tasks belong to this workload.
@@ -118,13 +149,30 @@ async def replay(events, invoke, mailbox, fixture, timeout, records=None):
                 "expected": event.get("outcomes", event.get("check")),
                 "overlap_met": parent not in completed if parent else None,
             }
+            if capture_evidence:
+                snapshot = capture_evidence()
+                records[event["id"]]["_conversation_start"] = len(snapshot["conversation"])
+                records[event["id"]]["_action_start"] = len(snapshot["actions"])
             print(f"Starting {event['id']}", flush=True)
             remaining.remove(event)
             asyncio.create_task(deliver(event))
         await asyncio.sleep(0.02)
         if not (asyncio.all_tasks() - {main_task}):
-            for event_id in started.keys() - completed:
+            newly_completed = started.keys() - completed
+            snapshot = capture_evidence() if capture_evidence else None
+            for event_id in newly_completed:
                 records[event_id]["drained_seconds"] = time.monotonic() - beginning
+                if snapshot:
+                    record = records[event_id]
+                    conversation_start = record.pop("_conversation_start")
+                    action_start = record.pop("_action_start")
+                    record["evidence"] = {
+                        "conversation": snapshot["conversation"][conversation_start:],
+                        "actions": snapshot["actions"][action_start:],
+                        "drafts": snapshot["drafts"],
+                        "sent": snapshot["sent"],
+                        "reminders": snapshot["reminders"],
+                    }
             completed.update(started)
             # A scheduled overlap may still be waiting for its offset.
             if remaining and not any(
@@ -185,6 +233,7 @@ async def run_worker(args):
     from server.agents.interaction_agent import runtime as interaction
     from server.agents.interaction_agent.metrics import record_llm_call
     from server.agents.execution_agent import runtime as execution
+    from server.agents.execution_agent.batch_manager import ExecutionBatchManager
     from server.config import get_settings
     from server.services.timezone_store import get_timezone_store
     from server.services.conversation import get_conversation_log
@@ -194,6 +243,7 @@ async def run_worker(args):
 
     fixture = json.loads((ROOT / "benchmarks/sample_inbox.json").read_text())
     instrument_unmetered_runtime(interaction, record_llm_call)
+    configure_draft_delivery(ExecutionBatchManager, args.draft_delivery)
     events = json.loads((ROOT / "benchmarks/sample_workload.json").read_text())["events"]
     if args.limit:
         events = events[:args.limit]
@@ -213,8 +263,16 @@ async def run_worker(args):
 
     # Give both LLMs the fixture clock without modifying production prompts.
     original_interaction = interaction.build_system_prompt
+    interaction_delivery_prompt = ""
+    if args.draft_delivery == "interaction":
+        interaction_delivery_prompt = (
+            "\nBenchmark interaction-delivery mode: the backend has not displayed completed "
+            "drafts. When an execution result contains a draft, call send_draft with the exact "
+            "recipient, subject, and body, then ask the user whether to send or revise it."
+        )
     interaction.build_system_prompt = lambda: (
-        original_interaction() + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
+        original_interaction() + interaction_delivery_prompt
+        + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
     )
     original_execution = execution.ExecutionAgent.build_system_prompt
     execution.ExecutionAgent.build_system_prompt = lambda self: (
@@ -253,6 +311,14 @@ async def run_worker(args):
                         else runtime.handle_agent_message(event["text"]))
         return asdict(result)
 
+    def capture_evidence():
+        conversation = [
+            {"type": tag, "timestamp": timestamp, "text": body}
+            for tag, timestamp, body in get_conversation_log().iter_entries()
+        ]
+        state = deepcopy(mailbox.snapshot())
+        return {"conversation": conversation, **state}
+
     if args.draft_check:
         return await check_draft_delivery(args, mailbox)
 
@@ -261,7 +327,9 @@ async def run_worker(args):
               "task_outcomes": "manual_review_required", "events": []}
     records = {}
     try:
-        output["events"] = await replay(events, invoke, mailbox, fixture, args.timeout, records)
+        output["events"] = await replay(
+            events, invoke, mailbox, fixture, args.timeout, records, capture_evidence
+        )
         failed = any(e.get("error") or not e.get("turn_result", {}).get("success")
                      for e in output["events"])
         output["status"] = "turn_errors" if failed else "finished"
@@ -276,7 +344,18 @@ async def run_worker(args):
         output["events"] = list(records.values())
         output["mailbox"] = mailbox.snapshot()
         output["transcript"] = get_conversation_log().load_transcript()
-        output["send_and_reminder_checks"] = check_outcomes(output)
+        outcome_report = check_outcomes(output)
+        output["message_checks"] = outcome_report
+        summary = outcome_report["summary"]
+        if summary["FAIL"] or not summary["global_checks_passed"]:
+            output["task_outcomes"] = "failed"
+        elif summary["MANUAL_REVIEW"]:
+            output["task_outcomes"] = "manual_review_required"
+        else:
+            output["task_outcomes"] = "passed"
+        output["send_and_reminder_checks"] = outcome_report["legacy_checks"]
+        outcomes_path = args.report.with_name("outcomes.json")
+        outcomes_path.write_text(json.dumps(outcome_report, indent=2) + "\n")
         args.report.write_text(json.dumps(output, indent=2) + "\n")
     return 0 if output["status"] == "finished" else 1
 
@@ -285,6 +364,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--smoke", action="store_true", help="fake models; not a baseline")
     parser.add_argument("--draft-check", action="store_true", help="compare delivery of one identical finished draft")
+    parser.add_argument(
+        "--draft-delivery", choices=("interaction", "direct"), default="direct",
+        help="route completed drafts through the interaction LLM or display them directly",
+    )
     parser.add_argument("--limit", type=int, help="run only the first N fixture events")
     parser.add_argument("--timeout", type=float, default=1800)
     parser.add_argument("--report", type=Path)
@@ -327,7 +410,8 @@ def main():
             shutil.copyfile(ROOT / "server/agents/interaction_agent/metrics.py", metrics_file)
         command = [sys.executable, str(Path(__file__).resolve()), "--workspace", directory,
                    "--server-root", str(args.server_root.resolve()),
-                   "--report", str(args.report), "--timeout", str(args.timeout), "--model", args.model]
+                   "--report", str(args.report), "--timeout", str(args.timeout), "--model", args.model,
+                   "--draft-delivery", args.draft_delivery]
         if args.limit:
             command.extend(["--limit", str(args.limit)])
         if args.smoke:

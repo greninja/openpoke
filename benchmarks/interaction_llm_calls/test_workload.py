@@ -5,14 +5,125 @@ from pathlib import Path
 import unittest
 
 from sample_tools import Mailbox, current_event
-from workload import replay
-from check_outcomes import check
+from workload import configure_draft_delivery, replay
+from check_outcomes import check, evaluate
 
 
 FIXTURE = json.loads((Path(__file__).resolve().parents[1] / "sample_inbox.json").read_text())
 
 
 class WorkloadTests(unittest.TestCase):
+    def test_draft_delivery_mode_changes_only_batch_routing(self):
+        class Manager:
+            def _format_batch_payload(self, results):
+                return "base"
+
+            def _deliver_structured_results(self, results):
+                return []
+
+        configure_draft_delivery(Manager, "direct")
+        self.assertEqual(Manager()._deliver_structured_results(["draft"]), [])
+        configure_draft_delivery(Manager, "interaction")
+        result = type("Result", (), {"structured_results": [{
+            "type": "draft_ready", "to": "a@example.test",
+            "subject": "Hello", "body": "Draft body",
+        }]})()
+        self.assertEqual(Manager()._deliver_structured_results([result]), [result])
+        payload = Manager()._format_batch_payload([result])
+        self.assertIn("To: a@example.test", payload)
+        self.assertIn("Subject: Hello", payload)
+        self.assertIn("Draft body", payload)
+
+    @staticmethod
+    def outcome_workload(event_id, evidence, received_at="2026-09-17T10:00:00+05:30"):
+        return {
+            "events": [{"id": event_id, "kind": "user", "received_at": received_at,
+                        "turn_result": {"success": True}, "evidence": evidence}],
+            "mailbox": {"drafts": evidence.get("drafts", []),
+                        "sent": evidence.get("sent", []),
+                        "reminders": evidence.get("reminders", []),
+                        "actions": evidence.get("actions", [])},
+        }
+
+    @staticmethod
+    def outcome_spec(event_id):
+        source = json.loads((Path(__file__).resolve().parents[1] / "sample_workload.json").read_text())
+        event = next(item for item in source["events"] if item["id"] == event_id)
+        return {"events": [event]}
+
+    def test_checklist_has_one_row_for_every_user_message(self):
+        source = json.loads((Path(__file__).resolve().parents[1] / "sample_workload.json").read_text())
+        events = [{"id": item["id"], "kind": "user",
+                   "received_at": "2026-09-17T10:00:00+05:30",
+                   "turn_result": {"success": True}, "evidence": {}}
+                  for item in source["events"] if item["kind"] == "user"]
+        report = evaluate({"events": events,
+                           "mailbox": {"drafts": [], "sent": [],
+                                       "reminders": [], "actions": []}}, source)
+        self.assertEqual(report["summary"]["messages_checked"], 55)
+        self.assertEqual(len(report["rows"]), 55)
+
+    def test_objective_draft_check_passes_and_bad_content_fails(self):
+        draft = {"draft_id": "D1", "recipient_email": "alice@example.test",
+                 "subject": "Friday meeting", "body": "I cannot attend the Friday meeting."}
+        evidence = {"drafts": [draft], "sent": [], "reminders": [],
+                    "actions": [], "conversation": [
+                        {"type": "poke_reply", "timestamp": "",
+                         "text": "To: alice@example.test\nSubject: Friday meeting\n\n"
+                                 "I cannot attend the Friday meeting."}]}
+        report = evaluate(self.outcome_workload("U09", evidence), self.outcome_spec("U09"))
+        self.assertEqual(report["rows"][0]["status"], "PASS")
+        evidence["drafts"][0]["body"] = "Unrelated message"
+        report = evaluate(self.outcome_workload("U09", evidence), self.outcome_spec("U09"))
+        self.assertEqual(report["rows"][0]["status"], "FAIL")
+
+    def test_recipient_alone_does_not_count_as_approval_request(self):
+        draft = {"draft_id": "D1", "recipient_email": "carol@example.test",
+                 "subject": "Flight AI 2851",
+                 "body": "AI 2851 departs T2 at 07:40 and arrives at 09:45."}
+        evidence = {"drafts": [draft], "sent": [], "reminders": [], "actions": [],
+                    "conversation": [{"type": "poke_reply", "timestamp": "",
+                                      "text": "To: carol@example.test\nSubject: Flight AI 2851\n\n"
+                                              "AI 2851 departs T2 at 07:40 and arrives at 09:45."}]}
+        report = evaluate(self.outcome_workload("U25", evidence), self.outcome_spec("U25"))
+        approval = next(item for item in report["rows"][0]["automatic_checks"]
+                        if item["check"] == "approval requested in visible reply")
+        self.assertFalse(approval["passed"])
+        evidence["conversation"].append(
+            {"type": "poke_reply", "timestamp": "", "text": "Would you like me to send it?"}
+        )
+        report = evaluate(self.outcome_workload("U25", evidence), self.outcome_spec("U25"))
+        approval = next(item for item in report["rows"][0]["automatic_checks"]
+                        if item["check"] == "approval requested in visible reply")
+        self.assertTrue(approval["passed"])
+
+    def test_send_must_follow_approval(self):
+        draft = {"draft_id": "D1", "recipient_email": "erin@example.test",
+                 "subject": "Review PR #94", "body": "Please review PR #94."}
+        create = {"tool": "gmail_create_draft", "time": "2026-09-17T09:59:00+05:30",
+                  "arguments": {}, "result": draft}
+        send = {"tool": "gmail_execute_draft", "time": "2026-09-17T10:01:00+05:30",
+                "arguments": {"draft_id": "D1"},
+                "result": {"status": "sent", "draft_id": "D1"}}
+        sent = [{**draft, "event_id": "U40"}]
+        evidence = {"drafts": [], "sent": sent, "reminders": [],
+                    "actions": [create, send], "conversation": []}
+        workload = self.outcome_workload("U40", evidence,
+                                         "2026-09-17T10:00:00+05:30")
+        report = evaluate(workload, self.outcome_spec("U40"))
+        self.assertEqual(report["rows"][0]["status"], "PASS")
+        send["time"] = "2026-09-17T09:59:30+05:30"
+        report = evaluate(workload, self.outcome_spec("U40"))
+        self.assertEqual(report["rows"][0]["status"], "FAIL")
+
+    def test_natural_language_answer_requires_manual_review(self):
+        evidence = {"drafts": [], "sent": [], "reminders": [], "actions": [],
+                    "conversation": [{"type": "poke_reply", "timestamp": "",
+                                      "text": "I am OpenPoke."}]}
+        report = evaluate(self.outcome_workload("U01", evidence), self.outcome_spec("U01"))
+        self.assertEqual(report["rows"][0]["status"], "MANUAL_REVIEW")
+        self.assertEqual(report["rows"][0]["visible_replies"], ["I am OpenPoke."])
+
     def test_contacts_only_use_addresses_already_seen(self):
         mailbox = Mailbox(FIXTURE)
         self.assertEqual(mailbox.call("gmail_search_people", "contact", query="frank")["people"], [])
