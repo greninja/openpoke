@@ -3,9 +3,9 @@
 - **Original flow:** the interaction LLM receives completed drafts and displays them through `send_draft`.
 - **Our change:** `draft_ready` lets the backend display completed drafts directly, without that extra LLM step.
 
-Both runs used **the same code in this repo**, with only draft delivery switched. All model settings used `google/gemini-2.5-flash`.
+Both runs used the same code in this repo, with only draft delivery switched. All model settings used `google/gemini-2.5-flash`.
 
-We treated overload as work passing through the interaction LLM unnecessarily. Draft delivery is a clear case: once Gmail has created a complete, structured draft, another LLM does not need to reconstruct the same information before showing it to the user. The benchmark checks whether removing that step reduces interaction-agent work without lowering the recorded task score.
+We treated overload as work passing through the interaction LLM unnecessarily. For more context, read [Changes in this fork](../../../changes_in_this_fork.md).
 
 The [workload](../../sample_workload.json) contains **55 user tasks and 7 background events**. Both runs attempted all 62 events using a fake mailbox. No real emails were sent.
 
@@ -22,7 +22,7 @@ The [workload](../../sample_workload.json) contains **55 user tasks and 7 backgr
 | Recorded input tokens | 1,533,808 | 1,122,607 | 26.8% |
 | Recorded output tokens | 8,342 | 4,993 | 40.1% |
 
-A **trigger** starts an interaction-agent turn. One turn can make several LLM calls. These counts cover only the interaction agent.
+**In this run, our change used 17.1% fewer interaction LLM calls and 11.1% fewer triggers, with the same overall user-task score.**
 
 Directly displayed drafts are still saved in the conversation history, including their draft ID. Follow-up questions, revisions, and approvals still go through the interaction LLM, which can send work back to an execution agent. The saving comes from skipping the LLM step just to display the completed draft.
 
@@ -39,8 +39,6 @@ Codex then reviewed the unclear tasks using the saved replies and actions. Each 
 | Still unclear | 1 | 1 |
 
 In each run, automatic checks gave 15 passes, 12 failures, and 28 tasks for review. Manual review added 21 passes and 6 failures, leaving 1 unclear.
-
-**In this run, our change used 17.1% fewer interaction LLM calls and 11.1% fewer triggers, with the same overall user-task score.**
 
 ## Run the benchmark
 

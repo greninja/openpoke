@@ -16,7 +16,7 @@ See [Changes in this fork](changes_in_this_fork.md) for the approach, implementa
 - Node.js 18+
 - npm 9+
 
-For the benchmark only, follow [these steps](benchmarks/results/interaction_llm_calls/comparison-same-repo-2026-09-19.md#run-the-benchmark). You need Python and an OpenRouter key; Node.js and Gmail setup are not required.
+For the benchmark only, follow [these steps](benchmarks/results/interaction_llm_calls/comparison-2026-09-19.md#run-the-benchmark). You need Python and an OpenRouter key; Node.js and Gmail setup are not required.
 
 ## Quickstart
 1. **Clone and enter the repo.**
