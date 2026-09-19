@@ -10,6 +10,18 @@ I targeted a narrow but common scenario: displaying completed email drafts for r
 
 The execution agent now returns a `draft_ready` result, and a backend **Draft Delivery Service** displays the draft directly. The service still saves the draft and its ID in the interaction agent’s conversation history, so follow-up questions, revisions, and approvals continue to work. Displaying a draft does **not** send the email. Removing this round trip saves time and model cost, which can add up quickly for a frequently used workflow like email.
 
+### Before
+
+Completed drafts return to the interaction LLM before being shown to the user.
+
+![Original OpenPoke architecture](docs/images/architecture-before.jpg)
+
+### With direct draft delivery
+
+The teal path shows the new backend service displaying drafts and saving their context. Other results requiring LLM's subjective analysis still go through the interaction agent.
+
+![OpenPoke architecture with direct draft delivery](docs/images/architecture-draft-ready.png)
+
 ## 3. How did I measure improvement?
 
 I measured the interaction agent’s workload using:
@@ -23,18 +35,6 @@ Lower values indicate less interaction-agent work, as long as task completion an
 I created a [reproducible benchmark of 55 user tasks](benchmarks/results/interaction_llm_calls/comparison-2026-09-19.md) to measure this. It switches direct draft delivery on or off.
 
 Using Gemini 2.5 Flash across 55 user tasks, direct delivery (my approach) reduced interaction LLM calls from **123 to 102 (17.1%)** and triggers from **99 to 88 (11.1%)**. Both runs recorded **36 passes, 18 failures, and 1 unclear task**. See the [comparison and reproduction steps](benchmarks/results/interaction_llm_calls/comparison-2026-09-19.md).
-
-## Before
-
-Completed drafts return to the interaction LLM before being shown to the user.
-
-![Original OpenPoke architecture](docs/images/architecture-before.jpg)
-
-## With direct draft delivery
-
-The teal path shows the new backend service displaying drafts and saving their context. Other results requiring LLM's subjective analysis still go through the interaction agent.
-
-![OpenPoke architecture with direct draft delivery](docs/images/architecture-draft-ready.png)
 
 ## Other questions and notes
 
