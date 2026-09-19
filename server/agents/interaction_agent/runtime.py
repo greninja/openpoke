@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Set
 from .agent import build_system_prompt, prepare_message_with_history
 from .tools import ToolResult, get_tool_schemas, handle_tool_call
 from ..tool_protocol import describes_tool_call
-from .metrics import TurnType, record_llm_call
+from .metrics import TurnType, record_llm_call, record_llm_usage, record_turn
 from ...config import get_settings
 from ...services.conversation import get_conversation_log, get_working_memory_log
 from ...openrouter_client import request_chat_completion
@@ -57,7 +57,7 @@ class InteractionAgentRuntime:
         self.conversation_log = get_conversation_log()
         self.working_memory_log = get_working_memory_log()
         self.tool_schemas = [tool for tool in get_tool_schemas()
-                             if tool["function"]["name"] != "send_draft"]
+                             if not settings.draft_ready_enabled or tool["function"]["name"] != "send_draft"]
 
         if not self.api_key:
             raise ValueError(
@@ -68,6 +68,7 @@ class InteractionAgentRuntime:
     async def execute(self, user_message: str) -> InteractionResult:
         """Handle a user-authored message."""
 
+        record_turn("user")
         try:
             transcript_before = self._load_conversation_transcript()
             self.conversation_log.record_user_message(user_message)
@@ -102,6 +103,7 @@ class InteractionAgentRuntime:
     # Handle incoming messages from execution agents and generate appropriate responses
     async def handle_agent_message(self, agent_message: str) -> InteractionResult:
         """Process a status update emitted by an execution agent."""
+        record_turn("agent")
 
         try:
             transcript_before = self._load_conversation_transcript()
@@ -249,13 +251,15 @@ class InteractionAgentRuntime:
             extra={"model": self.model, "tools": len(self.tool_schemas)},
         )
         record_llm_call(turn_type)
-        return await request_chat_completion(
+        response = await request_chat_completion(
             model=self.model,
             messages=messages,
             system=system_prompt,
             api_key=self.api_key,
             tools=self.tool_schemas,
         )
+        record_llm_usage(turn_type, response)
+        return response
 
     # Extract the assistant's message from the OpenRouter API response structure
     def _extract_assistant_message(self, response: Dict[str, Any]) -> Dict[str, Any]:
@@ -325,7 +329,7 @@ class InteractionAgentRuntime:
     # Execute tool calls with error handling and logging, returning standardized results
     def _execute_tool(self, tool_call: _ToolCall) -> ToolResult:
         """Execute a tool call and convert low-level errors into structured results."""
-        if tool_call.name == "send_draft":
+        if tool_call.name == "send_draft" and get_settings().draft_ready_enabled:
             return ToolResult(success=False, payload={"error":
                 "Stored drafts are created by execution agents and displayed automatically. "
                 "Use send_message_to_agent to create or revise a draft."})

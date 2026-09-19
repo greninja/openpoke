@@ -19,11 +19,17 @@ from sample_tools import Mailbox, current_event
 from check_outcomes import evaluate as check_outcomes
 
 ROOT = Path(__file__).resolve().parents[2]
+BENCHMARK_MODEL = "google/gemini-2.5-flash"
 
 
-def instrument_unmetered_runtime(module, record_call):
-    """Use the same call boundary for worktrees without built-in counters."""
-    if hasattr(module, "record_llm_call"):
+def select_server_root(draft_ready):
+    """Both flag values intentionally select this checkout."""
+    return ROOT
+
+
+def instrument_unmetered_runtime(module, record_call, record_usage, record_turn):
+    """Measure original code at the same boundaries as the current runtime."""
+    if hasattr(module, "record_llm_usage"):
         return
     turn = ContextVar("interaction_turn_type")
     runtime = module.InteractionAgentRuntime
@@ -31,21 +37,26 @@ def instrument_unmetered_runtime(module, record_call):
     def wrap_entry(method, source):
         async def entry(self, *args, **kwargs):
             token = turn.set(source)
+            record_turn(source)
             try:
                 return await method(self, *args, **kwargs)
             finally:
                 turn.reset(token)
         return entry
 
-    original_call = runtime._make_llm_call
+    original_request = module.request_chat_completion
 
-    async def call(self, *args, **kwargs):
-        record_call(turn.get())
-        return await original_call(self, *args, **kwargs)
+    async def request(**kwargs):
+        source = turn.get()
+        if not hasattr(module, "record_llm_call"):
+            record_call(source)
+        response = await original_request(**kwargs)
+        record_usage(source, response)
+        return response
 
     runtime.execute = wrap_entry(runtime.execute, "user")
     runtime.handle_agent_message = wrap_entry(runtime.handle_agent_message, "agent")
-    runtime._make_llm_call = call
+    module.request_chat_completion = request
 
 
 def load_model_environment(path):
@@ -66,37 +77,8 @@ def target_metadata(args):
         ).strip()
     return {"server_root": str(root), "server_commit": git("rev-parse", "HEAD"),
             "server_dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
-            "model": args.model, "draft_delivery": args.draft_delivery}
-
-
-def configure_draft_delivery(batch_manager_class, mode):
-    """Select the only behavior that differs between comparison runs."""
-    supports_direct = hasattr(batch_manager_class, "_deliver_structured_results")
-    if mode == "direct":
-        if not supports_direct:
-            raise RuntimeError("Target does not support direct draft-ready delivery")
-        return
-    if mode != "interaction":
-        raise ValueError(f"Unknown draft delivery mode: {mode}")
-    if supports_direct:
-        original_format = batch_manager_class._format_batch_payload
-
-        def format_with_drafts(self, results):
-            payload = original_format(self, results)
-            drafts = []
-            for result in results:
-                for item in getattr(result, "structured_results", []):
-                    if item.get("type") == "draft_ready":
-                        drafts.append(
-                            "Draft ready for user review.\n"
-                            f"To: {item.get('to', '')}\n"
-                            f"Subject: {item.get('subject', '')}\n\n"
-                            f"{item.get('body', '')}"
-                        )
-            return "\n".join([payload, *drafts])
-
-        batch_manager_class._format_batch_payload = format_with_drafts
-        batch_manager_class._deliver_structured_results = lambda self, results: list(results)
+            "model": args.model, "draft_delivery": "direct" if args.draft_ready else "interaction",
+            "draft_ready": args.draft_ready, "comparison": "same_repo_draft_ready_toggle"}
 
 
 async def replay(events, invoke, mailbox, fixture, timeout, records=None, capture_evidence=None):
@@ -192,14 +174,19 @@ async def check_draft_delivery(args, mailbox):
     from server.services.conversation import get_conversation_log
     from server.services.execution import get_agent_roster
 
+    from server.agents.interaction_agent.runtime import InteractionAgentRuntime
+    from server.agents.interaction_agent.agent import build_system_prompt
+
+    runtime = InteractionAgentRuntime()
+    advertised = {tool["function"]["name"] for tool in runtime.tool_schemas}
+    prompt = build_system_prompt()
     log = get_conversation_log()
     name = "Email to Erin"
     get_agent_roster().add_agent(name)
     log.record_user_message("Draft an email to erin@example.test asking her to review PR #94. Leave it unsent.")
     draft = mailbox.call("gmail_create_draft", name, recipient_email="erin@example.test",
                          subject="Review PR #94", body="Hi Erin, please review PR #94. Thanks!")
-    text = (f"Draft ready for review. Draft ID: {draft['draft_id']}\n"
-            f"To: {draft['recipient_email']}\nSubject: {draft['subject']}\n\n{draft['body']}")
+    text = "Draft stored successfully."  # Exact content must come from the structured result.
     kwargs = {}
     if "structured_results" in ExecutionResult.__dataclass_fields__:
         kwargs["structured_results"] = [{"type": "draft_ready", "task_id": "paired-draft",
@@ -220,8 +207,15 @@ async def check_draft_delivery(args, mailbox):
     expected = f"To: {draft['recipient_email']}\nSubject: {draft['subject']}\n\n{draft['body']}"
     replies = [body for tag, _, body in log.iter_entries() if tag == "poke_reply"]
     checks = {"exact_draft_displayed_once": replies.count(expected) == 1,
-              "email_not_sent": not mailbox.sent, "one_stored_draft": len(mailbox.drafts) == 1}
-    output = {"mode": "paired_draft_delivery", **target_metadata(args),
+              "email_not_sent": not mailbox.sent, "one_stored_draft": len(mailbox.drafts) == 1,
+              "send_draft_available_only_when_needed": ("send_draft" in advertised) == (not args.draft_ready),
+              "prompt_matches_delivery": (
+                  "backend has already displayed" in prompt if args.draft_ready else
+                  "has NOT been displayed" in prompt and "backend has already displayed" not in prompt
+              ),
+              "draft_context_retained": any(draft["draft_id"] in body and name in body
+                                            for tag, _, body in log.iter_entries() if tag == "agent_message")}
+    output = {"mode": "smoke_paired_draft_delivery" if args.smoke else "paired_draft_delivery", **target_metadata(args),
               "task_outcomes": "passed" if all(checks.values()) else "failed",
               "checks": checks, "transcript": log.load_transcript(), "mailbox": mailbox.snapshot()}
     args.report.write_text(json.dumps(output, indent=2) + "\n")
@@ -231,7 +225,7 @@ async def check_draft_delivery(args, mailbox):
 
 async def run_worker(args):
     from server.agents.interaction_agent import runtime as interaction
-    from server.agents.interaction_agent.metrics import record_llm_call
+    from server.agents.interaction_agent.metrics import record_llm_call, record_llm_usage, record_turn
     from server.agents.execution_agent import runtime as execution
     from server.agents.execution_agent.batch_manager import ExecutionBatchManager
     from server.config import get_settings
@@ -242,8 +236,6 @@ async def run_worker(args):
     from server.services.conversation.summarization import working_memory_log
 
     fixture = json.loads((ROOT / "benchmarks/sample_inbox.json").read_text())
-    instrument_unmetered_runtime(interaction, record_llm_call)
-    configure_draft_delivery(ExecutionBatchManager, args.draft_delivery)
     events = json.loads((ROOT / "benchmarks/sample_workload.json").read_text())["events"]
     if args.limit:
         events = events[:args.limit]
@@ -251,8 +243,8 @@ async def run_worker(args):
     for module in (conversation_log, log_store, working_memory_log):
         module.now_in_user_timezone = lambda fmt: mailbox.now.strftime(fmt)
     settings = get_settings()
-    # Override settings only in this temporary worker, including older code that
-    # does not support OPENROUTER_MODEL. Both targets must use the selected model.
+    settings.draft_ready_enabled = args.draft_ready
+    # Both modes use identical model settings in this temporary worker.
     for field in ("interaction_agent_model", "execution_agent_model",
                   "execution_agent_search_model", "summarizer_model", "email_classifier_model"):
         setattr(settings, field, args.model)
@@ -263,17 +255,7 @@ async def run_worker(args):
 
     # Give both LLMs the fixture clock without modifying production prompts.
     original_interaction = interaction.build_system_prompt
-    interaction_delivery_prompt = ""
-    if args.draft_delivery == "interaction":
-        interaction_delivery_prompt = (
-            "\nBenchmark interaction-delivery mode: the backend has not displayed completed "
-            "drafts. When an execution result contains a draft, call send_draft with the exact "
-            "recipient, subject, and body, then ask the user whether to send or revise it."
-        )
-    interaction.build_system_prompt = lambda: (
-        original_interaction() + interaction_delivery_prompt
-        + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
-    )
+    interaction.build_system_prompt = lambda: original_interaction() + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
     original_execution = execution.ExecutionAgent.build_system_prompt
     execution.ExecutionAgent.build_system_prompt = lambda self: (
         original_execution(self) + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
@@ -282,6 +264,20 @@ async def run_worker(args):
     if args.smoke:
         async def fake_interaction(**kwargs):
             assert kwargs["model"] == args.model, "Runtime did not use the selected model"
+            if args.draft_check:
+                advertised = {tool["function"]["name"] for tool in kwargs["tools"]}
+                assert "send_draft" in advertised, "Interaction display mode must advertise send_draft"
+                assert any('"draft_id": "D1"' in m.get("content", "") and
+                           '"body": "Hi Erin, please review PR #94. Thanks!"' in m.get("content", "")
+                           for m in kwargs["messages"]), "Completed draft content must reach the model"
+                if any(m["role"] == "tool" for m in kwargs["messages"]):
+                    message = {"content": ""}
+                else:
+                    message = {"content": "", "tool_calls": [{"id": "display-draft", "type": "function", "function": {
+                        "name": "send_draft", "arguments": json.dumps({
+                            "to": "erin@example.test", "subject": "Review PR #94",
+                            "body": "Hi Erin, please review PR #94. Thanks!"})}}]}
+                return {"choices": [{"message": message}]}
             if any(m["role"] == "tool" for m in kwargs["messages"]):
                 message = {"content": "Smoke: delegation submitted."}
             elif "<new_agent_message>" in kwargs["messages"][0]["content"]:
@@ -304,6 +300,8 @@ async def run_worker(args):
 
         interaction.request_chat_completion = fake_interaction
         execution.request_chat_completion = fake_execution
+
+    instrument_unmetered_runtime(interaction, record_llm_call, record_llm_usage, record_turn)
 
     async def invoke(event):
         runtime = interaction.InteractionAgentRuntime()
@@ -365,28 +363,30 @@ def main():
     parser.add_argument("--smoke", action="store_true", help="fake models; not a baseline")
     parser.add_argument("--draft-check", action="store_true", help="compare delivery of one identical finished draft")
     parser.add_argument(
-        "--draft-delivery", choices=("interaction", "direct"), default="direct",
-        help="route completed drafts through the interaction LLM or display them directly",
+        "--draft-ready", action=argparse.BooleanOptionalAction, default=True,
+        help="same repo: display drafts directly, or use --no-draft-ready to display through the interaction LLM",
     )
     parser.add_argument("--limit", type=int, help="run only the first N fixture events")
     parser.add_argument("--timeout", type=float, default=1800)
     parser.add_argument("--report", type=Path)
     parser.add_argument("--workspace", type=Path, help=argparse.SUPPRESS)
-    parser.add_argument("--server-root", type=Path, default=ROOT,
-                        help="worktree to benchmark; fixtures and model settings remain unchanged")
-    parser.add_argument("--model", help="model for both targets; defaults to OPENROUTER_MODEL or google/gemini-2.5-flash-lite")
+    parser.add_argument("--model", choices=(BENCHMARK_MODEL,), default=BENCHMARK_MODEL,
+                        help="fixed model for every role in both draft display modes")
     args = parser.parse_args()
+    args.server_root = select_server_root(args.draft_ready)
     if args.limit is not None and args.limit < 1:
         parser.error("--limit must be positive")
     if args.smoke and args.limit is None:
         args.limit = 3
     if not args.smoke and not args.workspace:
         load_model_environment(ROOT / ".env")
-    args.model = args.model or os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-flash-lite")
+        load_model_environment(ROOT.parent / "openpoke" / ".env")
+    os.environ["OPENROUTER_MODEL"] = args.model
+    os.environ["OPENPOKE_DRAFT_READY"] = "1" if args.draft_ready else "0"
     if not args.model.strip():
         parser.error("--model must not be empty")
     if not (args.server_root / "server").is_dir():
-        parser.error("--server-root must point to a repository containing server/")
+        parser.error(f"Selected repository has no server/ directory: {args.server_root}")
     if not args.smoke and not os.environ.get("OPENROUTER_API_KEY"):
         parser.error("Set OPENROUTER_API_KEY in the environment or the project root .env")
     if args.workspace:
@@ -406,12 +406,10 @@ def main():
             "data", "__pycache__", ".env*", "roster.json", "venv", "*.log"
         ))
         metrics_file = Path(directory) / "server/agents/interaction_agent/metrics.py"
-        if not metrics_file.exists():
-            shutil.copyfile(ROOT / "server/agents/interaction_agent/metrics.py", metrics_file)
+        shutil.copyfile(ROOT / "server/agents/interaction_agent/metrics.py", metrics_file)
         command = [sys.executable, str(Path(__file__).resolve()), "--workspace", directory,
-                   "--server-root", str(args.server_root.resolve()),
                    "--report", str(args.report), "--timeout", str(args.timeout), "--model", args.model,
-                   "--draft-delivery", args.draft_delivery]
+                   "--draft-ready" if args.draft_ready else "--no-draft-ready"]
         if args.limit:
             command.extend(["--limit", str(args.limit)])
         if args.smoke:

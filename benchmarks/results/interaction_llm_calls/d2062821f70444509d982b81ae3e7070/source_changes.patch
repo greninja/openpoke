@@ -1,0 +1,973 @@
+diff --git a/benchmarks/interaction_llm_calls/README.md b/benchmarks/interaction_llm_calls/README.md
+deleted file mode 100644
+index 5b7836c..0000000
+--- a/benchmarks/interaction_llm_calls/README.md
++++ /dev/null
+@@ -1,187 +0,0 @@
+-# Interaction LLM call counts
+-
+-Counts each attempted `request_chat_completion` in the interaction runtime,
+-including failures. Counts model calls, not activations or HTTP retries inside
+-the model client. Execution-agent and summarizer model calls are excluded.
+-
+-- `user_turn_calls`: calls originating in `execute()`.
+-- `agent_turn_calls`: calls originating in `handle_agent_message()`, including
+-  execution results and watcher notifications.
+-- `total_calls`: their sum.
+-
+-## Run
+-
+-From the repository root:
+-
+-```sh
+-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py
+-```
+-
+-The command must run the backend in the same process or start it as a child
+-process, so it inherits the metrics environment variables. Wrapping an HTTP
+-client talking to an already-running server will **not** instrument that server.
+-Use an isolated backend with no unrelated traffic. The command must wait for
+-all background execution and interaction tasks before exiting; returning from
+-`execute()` alone does not mean delegated work has finished.
+-
+-Each run gets a separate directory under `benchmarks/results/interaction_llm_calls/`
+-containing `calls.jsonl` and `report.json`. No message content is recorded.
+-Without `OPENPOKE_INTERACTION_METRICS_PATH`, instrumentation is disabled.
+-The runner does not read `.env`; any workload command's configuration is separate.
+-
+-## Sample driver
+-
+-Set `OPENROUTER_API_KEY` in the process environment or the project root `.env`.
+-The live driver loads only `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from that
+-file without printing them; existing environment values take priority.
+-Smoke mode and tests do not load it. Model calls use OpenRouter;
+-all execution tools use a local fixture adapter. No real email is sent.
+-
+-`workload.py` reads the existing workload and inbox JSON files, imports the
+-server from a temporary copy without existing data or credentials, and runs
+-the normal interaction/execution loops and batch manager. Agent state is
+-discarded afterward. `--limit 10` runs the first ten fixture events.
+-
+-It writes `workload.json` beside the counts report, with event timing, expected
+-outcomes, tool actions, final mailbox state and conversation text. It also writes
+-`outcomes.json`: one row per user message with `PASS`, `FAIL`, or
+-`MANUAL_REVIEW`, the expected outcomes, automatic checks, and supporting
+-evidence. Unlike `calls.jsonl`, these files **do contain benchmark messages,
+-replies, and simulated email contents**.
+-
+-Scope and limits (keep these identical for before/after comparisons):
+-
+-- Completion means all background work has drained, not just an initial
+-  acknowledgement. Shared batches are conservatively treated as one wave:
+-  dependent events wait for global idle rather than per-request completion.
+-- `while_pending` events start at their configured offsets. If the parent has
+-  already finished, `overlap_met` is false; the report makes this visible.
+-- Search returns all currently visible fixture emails for the execution LLM
+-  to select from. This measures orchestration, not Gmail search quality or its
+-  separate search LLM. Incoming fixture mail becomes visible at its event.
+-- U34 email search calls return the specified injected failure. If the model
+-  answers from history and never searches, no failure is injected; actions
+-  make this visible.
+-- Reminder tools store local records. B05/B07 advance the fixture clock to the
+-  corresponding stored reminder and inject the sample notification. Missing
+-  reminders produce an event error; no reminder is silently invented.
+-  The two fixture reminders are matched by their payload (desk break or charger),
+-  since a shared batch callback can inherit a different event ID. Multiple
+-  matching reminders fail the check rather than choosing one silently.
+-- Contact lookup uses only addresses present in the initial mailbox or user
+-  messages already delivered. It does not consult real contacts or future events.
+-- Summarization is disabled. Model prompts and conversation timestamps use the
+-  fixture clock, which advances with elapsed time and reminder delivery.
+-- Outcome checks are preserved for **manual review**, not automatically graded.
+-  A zero exit code only means the driver finished without input-turn errors;
+-  inspect the transcript and actions for task correctness or execution errors.
+-
+-Run a quick wiring check with no network or API key:
+-
+-```sh
+-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py --smoke
+-```
+-
+-Smoke mode runs the first three sample events with fake model responses. It
+-exercises delegation, the local mailbox, batch callbacks, and the counter;
+-its expected count is **9 interaction calls (6 user, 3 agent)**. These are
+-test counts, not a real-model baseline.
+-
+-The count above describes the original runtime. The corrected draft-ready
+-runtime ends a turn after successful delegation and can use fewer smoke calls.
+-
+-## Compare the same completed draft
+-
+-Append `--draft-check` to the workload command (and `--server-root` for the other
+-version). Both receive the same completed draft. The check requires the exact
+-draft to be displayed once, one stored draft, and no email sent. This isolates
+-draft delivery from differing searches, model plans, and later user turns.
+-
+-Full runs automatically check stored drafts, their contents and active versions,
+-simulated sends, send ordering after approval, and reminder timing. Natural
+-language answers and subjective requirements such as warmer wording remain
+-`MANUAL_REVIEW`, with the relevant visible replies included. A message passes
+-only when all of its automatic checks pass. To generate a checklist for a saved
+-run:
+-
+-```sh
+-python3 benchmarks/interaction_llm_calls/check_outcomes.py /path/to/workload.json
+-```
+-
+-To compare another worktree, append `--server-root /absolute/path/to/worktree`
+-to the workload command. The driver uses that worktree's server code (including
+-uncommitted changes) in a temporary copy, while keeping this runner's fixtures
+-and model settings. If the target lacks counters, it wraps the same interaction
+-model-call boundary in memory. It does not modify the target worktree.
+-
+-## Original versus updated code
+-
+-Keep `openpoke/` on the original author's commit. Run these commands from
+-`openpoke-dev/`, which contains the updated code, benchmark tools, fixtures, and
+-results. The commands reuse the existing Python environment in `openpoke/`.
+-
+-Original orchestration:
+-
+-```sh
+-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py \
+-  --server-root ../openpoke --model google/gemini-2.5-flash-lite
+-```
+-
+-Updated orchestration:
+-
+-```sh
+-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py \
+-  --server-root . --model google/gemini-2.5-flash-lite
+-```
+-
+-## Compare draft delivery on the same code
+-
+-Run the current code twice with identical fixtures and model settings. The first
+-run forwards completed draft results through the interaction LLM:
+-
+-```sh
+-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py \
+-  --server-root . --draft-delivery interaction
+-```
+-
+-The second run displays structured drafts directly:
+-
+-```sh
+-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py \
+-  --server-root . --draft-delivery direct
+-```
+-
+-The selected `draft_delivery` mode is recorded in both reports.
+-
+-Add `--smoke` to either workload command for a local check with fake model
+-responses and no network calls. For live runs, set `OPENROUTER_API_KEY` in the
+-environment or in `openpoke-dev/.env`; the original folder's `.env` is not loaded.
+-
+-`--model` overrides all model settings inside the temporary worker, including
+-original versions that do not support `OPENROUTER_MODEL`. If omitted, it uses
+-`OPENROUTER_MODEL` or `google/gemini-2.5-flash-lite`. Both targets use the same
+-fixtures, local mailbox adapter, and completion checks from this worktree.
+-Original source files and application data are never modified.
+-
+-Reports include `server_root`, `server_commit`, `server_dirty` (tracked changes),
+-and `model`. Smoke reports name the selected model but do not actually call it.
+-Historical reports keep their original paths and commit metadata, where available;
+-consolidating the folders does not rewrite old results. Historical runs made
+-before evidence snapshots were added remain `MANUAL_REVIEW` where the checker
+-cannot establish the state at that message. Compare the 55-message checklist as
+-well as call counts.
+-
+-## Verify counting without model calls
+-
+-```sh
+-python3 -m unittest discover -s benchmarks/interaction_llm_calls -p 'test_*.py' -v
+-```
+-
+-These tests use fake model responses, do not read `.env`, and do not send email.
+-They verify instrumentation only; their counts are not a real-model baseline.
+diff --git a/benchmarks/interaction_llm_calls/runner.py b/benchmarks/interaction_llm_calls/runner.py
+index cd834e1..0cfc80c 100644
+--- a/benchmarks/interaction_llm_calls/runner.py
++++ b/benchmarks/interaction_llm_calls/runner.py
+@@ -10,15 +10,45 @@ from uuid import uuid4
+ 
+ 
+ def summarize(events_path: Path, run_id: str) -> dict:
++    """Calls are request attempts; turns are entry-point invocations.
++
++    Tokens sum available provider usage only. Check calls_without_token_usage
++    before treating token totals as complete. Old logs have unknown turn counts.
++    """
+     counts = {"user": 0, "agent": 0}
++    turns = {"user": 0, "agent": 0}
++    usage = []
++    legacy_log = False
+     for line in events_path.read_text(encoding="utf-8").splitlines():
+         event = json.loads(line)
+-        if event["run_id"] == run_id:
++        if event["run_id"] != run_id:
++            continue
++        legacy_log |= "event_type" not in event
++        kind = event.get("event_type", "llm_call")  # Older logs only recorded calls.
++        if kind == "llm_call":
+             counts[event["turn_type"]] += 1
++        elif kind == "turn":
++            turns[event["turn_type"]] += 1
++        elif kind == "llm_usage":
++            usage.append(event)
++    complete_usage = sum(e.get("input_tokens") is not None and
++                         e.get("output_tokens") is not None for e in usage)
++
++    def tokens(key):
++        values = [e[key] for e in usage if e.get(key) is not None]
++        return sum(values) if values else None
++
+     return {
+         "total_calls": sum(counts.values()),
+         "user_turn_calls": counts["user"],
+         "agent_turn_calls": counts["agent"],
++        "total_turns": None if legacy_log else sum(turns.values()),
++        "user_turns": None if legacy_log else turns["user"],
++        "agent_turns": None if legacy_log else turns["agent"],
++        "input_tokens": tokens("input_tokens"),
++        "output_tokens": tokens("output_tokens"),
++        "calls_with_token_usage": complete_usage,
++        "calls_without_token_usage": sum(counts.values()) - complete_usage,
+     }
+ 
+ 
+@@ -63,7 +93,7 @@ def main() -> int:
+         report["task_outcomes"] = workload.get("task_outcomes", "not_evaluated")
+         report["mode"] = workload.get("mode")
+         report["message_checks"] = workload.get("message_checks", {}).get("summary")
+-        for field in ("server_root", "server_commit", "server_dirty", "model", "draft_delivery"):
++        for field in ("server_root", "server_commit", "server_dirty", "model", "draft_delivery", "draft_ready", "comparison"):
+             report[field] = workload.get(field)
+     report_path = run_dir / "report.json"
+     report_path.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+diff --git a/benchmarks/interaction_llm_calls/test_metrics.py b/benchmarks/interaction_llm_calls/test_metrics.py
+index 2017397..e89bfb7 100644
+--- a/benchmarks/interaction_llm_calls/test_metrics.py
++++ b/benchmarks/interaction_llm_calls/test_metrics.py
+@@ -40,6 +40,7 @@ def runtime_namespace():
+         json=json, dataclass=dataclass, field=field, Any=Any, Dict=Dict,
+         List=List, Optional=Optional, Set=Set, ToolResult=SimpleNamespace,
+         TurnType=metrics.TurnType, record_llm_call=metrics.record_llm_call,
++        record_llm_usage=metrics.record_llm_usage, record_turn=metrics.record_turn,
+         describes_tool_call=load_file("tool_protocol", ROOT / "server/agents/tool_protocol.py").describes_tool_call,
+         logger=Mock(), build_system_prompt=Mock(return_value="system"),
+         prepare_message_with_history=Mock(return_value=[]),
+@@ -64,8 +65,8 @@ class MetricsTests(unittest.TestCase):
+             {"choices": [{"message": {"tool_calls": [{"id": "1", "function": {
+                 "name": "send_message_to_user", "arguments": '{"message":"Working on it."}'
+             }}]}}]},
+-            {"choices": [{"message": {"content": "done"}}]},
+-            {"choices": [{"message": {"content": "agent result"}}]},
++            {"choices": [{"message": {"content": "done"}}], "usage": {"prompt_tokens": 100, "completion_tokens": 20}},
++            {"choices": [{"message": {"content": "agent result"}}], "usage": {"prompt_tokens": 50, "completion_tokens": 10}},
+             RuntimeError("simulated model failure"),
+         ]
+ 
+@@ -83,9 +84,56 @@ class MetricsTests(unittest.TestCase):
+                 asyncio.run(exercise())
+             self.assertEqual(runner.summarize(path, "test"), {
+                 "total_calls": 4, "user_turn_calls": 3, "agent_turn_calls": 1,
++                "total_turns": 3, "user_turns": 2, "agent_turns": 1,
++                "input_tokens": 150, "output_tokens": 30,
++                "calls_with_token_usage": 2, "calls_without_token_usage": 2,
+             })
+             self.assertEqual(runner.summarize(path, "other")["total_calls"], 0)
+ 
++    def test_missing_usage_is_unknown_and_old_logs_still_count(self):
++        with tempfile.TemporaryDirectory() as directory:
++            path = Path(directory) / "calls.jsonl"
++            path.write_text(json.dumps({"run_id": "old", "turn_type": "user"}) + "\n")
++            summary = runner.summarize(path, "old")
++            self.assertEqual(summary["total_calls"], 1)
++            self.assertIsNone(summary["total_turns"])
++            self.assertIsNone(summary["input_tokens"])
++            self.assertIsNone(summary["output_tokens"])
++            self.assertEqual(summary["calls_without_token_usage"], 1)
++
++    def test_original_runtime_concurrent_turns_and_usage(self):
++        from workload import instrument_unmetered_runtime
++        async def request(**kwargs):
++            await asyncio.sleep(0)
++            return {"usage": {"prompt_tokens": 12, "completion_tokens": 3}}
++
++        module = SimpleNamespace(request_chat_completion=request)
++        class Original:
++            async def execute(self, text):
++                await module.request_chat_completion()
++                await module.request_chat_completion()
++            async def handle_agent_message(self, text):
++                await module.request_chat_completion()
++        module.InteractionAgentRuntime = Original
++        instrument_unmetered_runtime(module, metrics.record_llm_call,
++                                     metrics.record_llm_usage, metrics.record_turn)
++        async def exercise():
++            await asyncio.gather(Original().execute("hello"), Original().handle_agent_message("done"))
++        with tempfile.TemporaryDirectory() as directory:
++            path = Path(directory) / "calls.jsonl"
++            with patch.dict(os.environ, {"OPENPOKE_INTERACTION_METRICS_PATH": str(path),
++                                         "OPENPOKE_BENCHMARK_RUN_ID": "original"}):
++                asyncio.run(exercise())
++            summary = runner.summarize(path, "original")
++            self.assertEqual(summary["total_turns"], 2)
++            self.assertEqual(summary["user_turns"], 1)
++            self.assertEqual(summary["agent_turns"], 1)
++            self.assertEqual(summary["user_turn_calls"], 2)
++            self.assertEqual(summary["agent_turn_calls"], 1)
++            self.assertEqual(summary["input_tokens"], 36)
++            self.assertEqual(summary["output_tokens"], 9)
++            self.assertEqual(summary["calls_without_token_usage"], 0)
++
+     def test_disabled_and_unwritable_metrics_do_not_break_requests(self):
+         with patch.dict(os.environ, {"OPENPOKE_INTERACTION_METRICS_PATH": ""}):
+             metrics.record_llm_call("user")
+diff --git a/benchmarks/interaction_llm_calls/test_workload.py b/benchmarks/interaction_llm_calls/test_workload.py
+index ef648a8..3c96149 100644
+--- a/benchmarks/interaction_llm_calls/test_workload.py
++++ b/benchmarks/interaction_llm_calls/test_workload.py
+@@ -3,9 +3,12 @@ from datetime import timedelta
+ import json
+ from pathlib import Path
+ import unittest
++import subprocess
++import sys
++import tempfile
+ 
+ from sample_tools import Mailbox, current_event
+-from workload import configure_draft_delivery, replay
++from workload import ROOT, BENCHMARK_MODEL, select_server_root, replay
+ from check_outcomes import check, evaluate
+ 
+ 
+@@ -13,26 +16,34 @@ FIXTURE = json.loads((Path(__file__).resolve().parents[1] / "sample_inbox.json")
+ 
+ 
+ class WorkloadTests(unittest.TestCase):
+-    def test_draft_delivery_mode_changes_only_batch_routing(self):
+-        class Manager:
+-            def _format_batch_payload(self, results):
+-                return "base"
+-
+-            def _deliver_structured_results(self, results):
+-                return []
+-
+-        configure_draft_delivery(Manager, "direct")
+-        self.assertEqual(Manager()._deliver_structured_results(["draft"]), [])
+-        configure_draft_delivery(Manager, "interaction")
+-        result = type("Result", (), {"structured_results": [{
+-            "type": "draft_ready", "to": "a@example.test",
+-            "subject": "Hello", "body": "Draft body",
+-        }]})()
+-        self.assertEqual(Manager()._deliver_structured_results([result]), [result])
+-        payload = Manager()._format_batch_payload([result])
+-        self.assertIn("To: a@example.test", payload)
+-        self.assertIn("Subject: Hello", payload)
+-        self.assertIn("Draft body", payload)
++    def test_both_modes_select_current_repository(self):
++        self.assertEqual(select_server_root(True), ROOT)
++        self.assertEqual(select_server_root(False), ROOT)
++        self.assertEqual(BENCHMARK_MODEL, "google/gemini-2.5-flash")
++
++    def test_both_modes_really_display_drafts(self):
++        for enabled in (False, True):
++            with self.subTest(draft_ready=enabled), tempfile.TemporaryDirectory() as directory:
++                output_dir = Path(directory)
++                command = [sys.executable, str(ROOT / "benchmarks/interaction_llm_calls/runner.py"),
++                           "--output-dir", str(output_dir), "--", sys.executable,
++                           str(ROOT / "benchmarks/interaction_llm_calls/workload.py"),
++                           "--draft-ready" if enabled else "--no-draft-ready",
++                           "--smoke", "--draft-check", "--timeout", "10"]
++                result = subprocess.run(command, capture_output=True, text=True, timeout=20)
++                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
++                report = json.loads(next(output_dir.glob("*/report.json")).read_text())
++                self.assertEqual(report["task_outcomes"], "passed")
++                self.assertEqual(report["model"], BENCHMARK_MODEL)
++                self.assertEqual(report["server_root"], str(select_server_root(enabled)))
++                self.assertEqual(report["draft_ready"], enabled)
++                if enabled:
++                    self.assertEqual(report["total_calls"], 0)
++                    self.assertEqual(report["total_turns"], 0)
++                else:
++                    self.assertEqual(report["agent_turn_calls"], 1)
++                    self.assertEqual(report["agent_turns"], 1)
++                    self.assertEqual(report["user_turns"], 0)
+ 
+     @staticmethod
+     def outcome_workload(event_id, evidence, received_at="2026-09-17T10:00:00+05:30"):
+diff --git a/benchmarks/interaction_llm_calls/workload.py b/benchmarks/interaction_llm_calls/workload.py
+index 0385298..421197e 100644
+--- a/benchmarks/interaction_llm_calls/workload.py
++++ b/benchmarks/interaction_llm_calls/workload.py
+@@ -19,11 +19,17 @@ from sample_tools import Mailbox, current_event
+ from check_outcomes import evaluate as check_outcomes
+ 
+ ROOT = Path(__file__).resolve().parents[2]
++BENCHMARK_MODEL = "google/gemini-2.5-flash"
+ 
+ 
+-def instrument_unmetered_runtime(module, record_call):
+-    """Use the same call boundary for worktrees without built-in counters."""
+-    if hasattr(module, "record_llm_call"):
++def select_server_root(draft_ready):
++    """Both flag values intentionally select this checkout."""
++    return ROOT
++
++
++def instrument_unmetered_runtime(module, record_call, record_usage, record_turn):
++    """Measure original code at the same boundaries as the current runtime."""
++    if hasattr(module, "record_llm_usage"):
+         return
+     turn = ContextVar("interaction_turn_type")
+     runtime = module.InteractionAgentRuntime
+@@ -31,21 +37,26 @@ def instrument_unmetered_runtime(module, record_call):
+     def wrap_entry(method, source):
+         async def entry(self, *args, **kwargs):
+             token = turn.set(source)
++            record_turn(source)
+             try:
+                 return await method(self, *args, **kwargs)
+             finally:
+                 turn.reset(token)
+         return entry
+ 
+-    original_call = runtime._make_llm_call
++    original_request = module.request_chat_completion
+ 
+-    async def call(self, *args, **kwargs):
+-        record_call(turn.get())
+-        return await original_call(self, *args, **kwargs)
++    async def request(**kwargs):
++        source = turn.get()
++        if not hasattr(module, "record_llm_call"):
++            record_call(source)
++        response = await original_request(**kwargs)
++        record_usage(source, response)
++        return response
+ 
+     runtime.execute = wrap_entry(runtime.execute, "user")
+     runtime.handle_agent_message = wrap_entry(runtime.handle_agent_message, "agent")
+-    runtime._make_llm_call = call
++    module.request_chat_completion = request
+ 
+ 
+ def load_model_environment(path):
+@@ -66,37 +77,8 @@ def target_metadata(args):
+         ).strip()
+     return {"server_root": str(root), "server_commit": git("rev-parse", "HEAD"),
+             "server_dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
+-            "model": args.model, "draft_delivery": args.draft_delivery}
+-
+-
+-def configure_draft_delivery(batch_manager_class, mode):
+-    """Select the only behavior that differs between comparison runs."""
+-    supports_direct = hasattr(batch_manager_class, "_deliver_structured_results")
+-    if mode == "direct":
+-        if not supports_direct:
+-            raise RuntimeError("Target does not support direct draft-ready delivery")
+-        return
+-    if mode != "interaction":
+-        raise ValueError(f"Unknown draft delivery mode: {mode}")
+-    if supports_direct:
+-        original_format = batch_manager_class._format_batch_payload
+-
+-        def format_with_drafts(self, results):
+-            payload = original_format(self, results)
+-            drafts = []
+-            for result in results:
+-                for item in getattr(result, "structured_results", []):
+-                    if item.get("type") == "draft_ready":
+-                        drafts.append(
+-                            "Draft ready for user review.\n"
+-                            f"To: {item.get('to', '')}\n"
+-                            f"Subject: {item.get('subject', '')}\n\n"
+-                            f"{item.get('body', '')}"
+-                        )
+-            return "\n".join([payload, *drafts])
+-
+-        batch_manager_class._format_batch_payload = format_with_drafts
+-        batch_manager_class._deliver_structured_results = lambda self, results: list(results)
++            "model": args.model, "draft_delivery": "direct" if args.draft_ready else "interaction",
++            "draft_ready": args.draft_ready, "comparison": "same_repo_draft_ready_toggle"}
+ 
+ 
+ async def replay(events, invoke, mailbox, fixture, timeout, records=None, capture_evidence=None):
+@@ -192,14 +174,19 @@ async def check_draft_delivery(args, mailbox):
+     from server.services.conversation import get_conversation_log
+     from server.services.execution import get_agent_roster
+ 
++    from server.agents.interaction_agent.runtime import InteractionAgentRuntime
++    from server.agents.interaction_agent.agent import build_system_prompt
++
++    runtime = InteractionAgentRuntime()
++    advertised = {tool["function"]["name"] for tool in runtime.tool_schemas}
++    prompt = build_system_prompt()
+     log = get_conversation_log()
+     name = "Email to Erin"
+     get_agent_roster().add_agent(name)
+     log.record_user_message("Draft an email to erin@example.test asking her to review PR #94. Leave it unsent.")
+     draft = mailbox.call("gmail_create_draft", name, recipient_email="erin@example.test",
+                          subject="Review PR #94", body="Hi Erin, please review PR #94. Thanks!")
+-    text = (f"Draft ready for review. Draft ID: {draft['draft_id']}\n"
+-            f"To: {draft['recipient_email']}\nSubject: {draft['subject']}\n\n{draft['body']}")
++    text = "Draft stored successfully."  # Exact content must come from the structured result.
+     kwargs = {}
+     if "structured_results" in ExecutionResult.__dataclass_fields__:
+         kwargs["structured_results"] = [{"type": "draft_ready", "task_id": "paired-draft",
+@@ -220,8 +207,15 @@ async def check_draft_delivery(args, mailbox):
+     expected = f"To: {draft['recipient_email']}\nSubject: {draft['subject']}\n\n{draft['body']}"
+     replies = [body for tag, _, body in log.iter_entries() if tag == "poke_reply"]
+     checks = {"exact_draft_displayed_once": replies.count(expected) == 1,
+-              "email_not_sent": not mailbox.sent, "one_stored_draft": len(mailbox.drafts) == 1}
+-    output = {"mode": "paired_draft_delivery", **target_metadata(args),
++              "email_not_sent": not mailbox.sent, "one_stored_draft": len(mailbox.drafts) == 1,
++              "send_draft_available_only_when_needed": ("send_draft" in advertised) == (not args.draft_ready),
++              "prompt_matches_delivery": (
++                  "backend has already displayed" in prompt if args.draft_ready else
++                  "has NOT been displayed" in prompt and "backend has already displayed" not in prompt
++              ),
++              "draft_context_retained": any(draft["draft_id"] in body and name in body
++                                            for tag, _, body in log.iter_entries() if tag == "agent_message")}
++    output = {"mode": "smoke_paired_draft_delivery" if args.smoke else "paired_draft_delivery", **target_metadata(args),
+               "task_outcomes": "passed" if all(checks.values()) else "failed",
+               "checks": checks, "transcript": log.load_transcript(), "mailbox": mailbox.snapshot()}
+     args.report.write_text(json.dumps(output, indent=2) + "\n")
+@@ -231,7 +225,7 @@ async def check_draft_delivery(args, mailbox):
+ 
+ async def run_worker(args):
+     from server.agents.interaction_agent import runtime as interaction
+-    from server.agents.interaction_agent.metrics import record_llm_call
++    from server.agents.interaction_agent.metrics import record_llm_call, record_llm_usage, record_turn
+     from server.agents.execution_agent import runtime as execution
+     from server.agents.execution_agent.batch_manager import ExecutionBatchManager
+     from server.config import get_settings
+@@ -242,8 +236,6 @@ async def run_worker(args):
+     from server.services.conversation.summarization import working_memory_log
+ 
+     fixture = json.loads((ROOT / "benchmarks/sample_inbox.json").read_text())
+-    instrument_unmetered_runtime(interaction, record_llm_call)
+-    configure_draft_delivery(ExecutionBatchManager, args.draft_delivery)
+     events = json.loads((ROOT / "benchmarks/sample_workload.json").read_text())["events"]
+     if args.limit:
+         events = events[:args.limit]
+@@ -251,8 +243,8 @@ async def run_worker(args):
+     for module in (conversation_log, log_store, working_memory_log):
+         module.now_in_user_timezone = lambda fmt: mailbox.now.strftime(fmt)
+     settings = get_settings()
+-    # Override settings only in this temporary worker, including older code that
+-    # does not support OPENROUTER_MODEL. Both targets must use the selected model.
++    settings.draft_ready_enabled = args.draft_ready
++    # Both modes use identical model settings in this temporary worker.
+     for field in ("interaction_agent_model", "execution_agent_model",
+                   "execution_agent_search_model", "summarizer_model", "email_classifier_model"):
+         setattr(settings, field, args.model)
+@@ -263,17 +255,7 @@ async def run_worker(args):
+ 
+     # Give both LLMs the fixture clock without modifying production prompts.
+     original_interaction = interaction.build_system_prompt
+-    interaction_delivery_prompt = ""
+-    if args.draft_delivery == "interaction":
+-        interaction_delivery_prompt = (
+-            "\nBenchmark interaction-delivery mode: the backend has not displayed completed "
+-            "drafts. When an execution result contains a draft, call send_draft with the exact "
+-            "recipient, subject, and body, then ask the user whether to send or revise it."
+-        )
+-    interaction.build_system_prompt = lambda: (
+-        original_interaction() + interaction_delivery_prompt
+-        + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
+-    )
++    interaction.build_system_prompt = lambda: original_interaction() + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
+     original_execution = execution.ExecutionAgent.build_system_prompt
+     execution.ExecutionAgent.build_system_prompt = lambda self: (
+         original_execution(self) + f"\nCurrent benchmark time: {mailbox.now.isoformat()}"
+@@ -282,6 +264,20 @@ async def run_worker(args):
+     if args.smoke:
+         async def fake_interaction(**kwargs):
+             assert kwargs["model"] == args.model, "Runtime did not use the selected model"
++            if args.draft_check:
++                advertised = {tool["function"]["name"] for tool in kwargs["tools"]}
++                assert "send_draft" in advertised, "Interaction display mode must advertise send_draft"
++                assert any('"draft_id": "D1"' in m.get("content", "") and
++                           '"body": "Hi Erin, please review PR #94. Thanks!"' in m.get("content", "")
++                           for m in kwargs["messages"]), "Completed draft content must reach the model"
++                if any(m["role"] == "tool" for m in kwargs["messages"]):
++                    message = {"content": ""}
++                else:
++                    message = {"content": "", "tool_calls": [{"id": "display-draft", "type": "function", "function": {
++                        "name": "send_draft", "arguments": json.dumps({
++                            "to": "erin@example.test", "subject": "Review PR #94",
++                            "body": "Hi Erin, please review PR #94. Thanks!"})}}]}
++                return {"choices": [{"message": message}]}
+             if any(m["role"] == "tool" for m in kwargs["messages"]):
+                 message = {"content": "Smoke: delegation submitted."}
+             elif "<new_agent_message>" in kwargs["messages"][0]["content"]:
+@@ -305,6 +301,8 @@ async def run_worker(args):
+         interaction.request_chat_completion = fake_interaction
+         execution.request_chat_completion = fake_execution
+ 
++    instrument_unmetered_runtime(interaction, record_llm_call, record_llm_usage, record_turn)
++
+     async def invoke(event):
+         runtime = interaction.InteractionAgentRuntime()
+         result = await (runtime.execute(event["text"]) if event["kind"] == "user"
+@@ -365,28 +363,30 @@ def main():
+     parser.add_argument("--smoke", action="store_true", help="fake models; not a baseline")
+     parser.add_argument("--draft-check", action="store_true", help="compare delivery of one identical finished draft")
+     parser.add_argument(
+-        "--draft-delivery", choices=("interaction", "direct"), default="direct",
+-        help="route completed drafts through the interaction LLM or display them directly",
++        "--draft-ready", action=argparse.BooleanOptionalAction, default=True,
++        help="same repo: display drafts directly, or use --no-draft-ready to display through the interaction LLM",
+     )
+     parser.add_argument("--limit", type=int, help="run only the first N fixture events")
+     parser.add_argument("--timeout", type=float, default=1800)
+     parser.add_argument("--report", type=Path)
+     parser.add_argument("--workspace", type=Path, help=argparse.SUPPRESS)
+-    parser.add_argument("--server-root", type=Path, default=ROOT,
+-                        help="worktree to benchmark; fixtures and model settings remain unchanged")
+-    parser.add_argument("--model", help="model for both targets; defaults to OPENROUTER_MODEL or google/gemini-2.5-flash-lite")
++    parser.add_argument("--model", choices=(BENCHMARK_MODEL,), default=BENCHMARK_MODEL,
++                        help="fixed model for every role in both draft display modes")
+     args = parser.parse_args()
++    args.server_root = select_server_root(args.draft_ready)
+     if args.limit is not None and args.limit < 1:
+         parser.error("--limit must be positive")
+     if args.smoke and args.limit is None:
+         args.limit = 3
+     if not args.smoke and not args.workspace:
+         load_model_environment(ROOT / ".env")
+-    args.model = args.model or os.environ.get("OPENROUTER_MODEL", "google/gemini-2.5-flash-lite")
++        load_model_environment(ROOT.parent / "openpoke" / ".env")
++    os.environ["OPENROUTER_MODEL"] = args.model
++    os.environ["OPENPOKE_DRAFT_READY"] = "1" if args.draft_ready else "0"
+     if not args.model.strip():
+         parser.error("--model must not be empty")
+     if not (args.server_root / "server").is_dir():
+-        parser.error("--server-root must point to a repository containing server/")
++        parser.error(f"Selected repository has no server/ directory: {args.server_root}")
+     if not args.smoke and not os.environ.get("OPENROUTER_API_KEY"):
+         parser.error("Set OPENROUTER_API_KEY in the environment or the project root .env")
+     if args.workspace:
+@@ -406,12 +406,10 @@ def main():
+             "data", "__pycache__", ".env*", "roster.json", "venv", "*.log"
+         ))
+         metrics_file = Path(directory) / "server/agents/interaction_agent/metrics.py"
+-        if not metrics_file.exists():
+-            shutil.copyfile(ROOT / "server/agents/interaction_agent/metrics.py", metrics_file)
++        shutil.copyfile(ROOT / "server/agents/interaction_agent/metrics.py", metrics_file)
+         command = [sys.executable, str(Path(__file__).resolve()), "--workspace", directory,
+-                   "--server-root", str(args.server_root.resolve()),
+                    "--report", str(args.report), "--timeout", str(args.timeout), "--model", args.model,
+-                   "--draft-delivery", args.draft_delivery]
++                   "--draft-ready" if args.draft_ready else "--no-draft-ready"]
+         if args.limit:
+             command.extend(["--limit", str(args.limit)])
+         if args.smoke:
+diff --git a/server/agents/execution_agent/batch_manager.py b/server/agents/execution_agent/batch_manager.py
+index 38c70f7..9188bac 100644
+--- a/server/agents/execution_agent/batch_manager.py
++++ b/server/agents/execution_agent/batch_manager.py
+@@ -3,6 +3,7 @@
+ from __future__ import annotations
+ 
+ import asyncio
++import json
+ import uuid
+ from dataclasses import dataclass, field
+ from datetime import datetime
+@@ -10,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
+ 
+ from .runtime import ExecutionAgentRuntime, ExecutionResult
+ from ...logging_config import logger
++from ...config import get_settings
+ from ...services.draft_delivery import display_draft_for_review
+ 
+ 
+@@ -185,6 +187,10 @@ class ExecutionBatchManager:
+             status = "SUCCESS" if result.success else "FAILED"
+             response_text = (result.response or "(no response provided)").strip()
+             entries.append(f"[{status}] {result.agent_name}: {response_text}")
++            if not get_settings().draft_ready_enabled:
++                for item in result.structured_results:
++                    if item.get("type") == "draft_ready":
++                        entries.append(json.dumps({**item, "agent_name": result.agent_name}, ensure_ascii=False))
+         return "\n".join(entries)
+ 
+     def _deliver_structured_results(
+@@ -193,6 +199,9 @@ class ExecutionBatchManager:
+     ) -> List[ExecutionResult]:
+         """Display known result types and return results that still need LLM judgment."""
+ 
++        if not get_settings().draft_ready_enabled:
++            return list(results)
++
+         interaction_results: List[ExecutionResult] = []
+ 
+         for result in results:
+diff --git a/server/agents/execution_agent/test_draft_ready.py b/server/agents/execution_agent/test_draft_ready.py
+index 4e1ebe0..ba662d2 100644
+--- a/server/agents/execution_agent/test_draft_ready.py
++++ b/server/agents/execution_agent/test_draft_ready.py
+@@ -10,6 +10,24 @@ from .runtime import ExecutionAgentRuntime, ExecutionResult
+ 
+ 
+ class DraftReadyResultTests(unittest.TestCase):
++    def test_disabled_delivery_forwards_exact_draft_and_other_results(self):
++        from types import SimpleNamespace
++        result = ExecutionResult("Email Alice", True, "Draft stored.", structured_results=[{
++            "type": "draft_ready", "draft_id": "D1", "task_id": "T1",
++            "to": "alice@example.test", "subject": "Exact subject", "body": "Exact body",
++        }], draft_only=True)
++        failure = ExecutionResult("Search", False, "Lookup failed")
++        with patch("server.agents.execution_agent.batch_manager.get_settings",
++                   return_value=SimpleNamespace(draft_ready_enabled=False)), patch(
++                       "server.agents.execution_agent.batch_manager.display_draft_for_review") as display:
++            manager = ExecutionBatchManager()
++            self.assertEqual(manager._deliver_structured_results([result, failure]), [result, failure])
++            display.assert_not_called()
++            payload = manager._format_batch_payload([result, failure])
++            for text in ('"draft_id": "D1"', '"agent_name": "Email Alice"',
++                         '"subject": "Exact subject"', '"body": "Exact body"', "Lookup failed"):
++                self.assertIn(text, payload)
++
+     def test_builds_draft_ready_from_successful_tool_call(self) -> None:
+         result = ExecutionAgentRuntime._build_structured_result(
+             "gmail_create_draft",
+diff --git a/server/agents/interaction_agent/agent.py b/server/agents/interaction_agent/agent.py
+index 3b8bc99..8acc4f9 100644
+--- a/server/agents/interaction_agent/agent.py
++++ b/server/agents/interaction_agent/agent.py
+@@ -5,6 +5,7 @@ from pathlib import Path
+ from typing import Dict, List
+ 
+ from ...services.execution import get_agent_roster
++from ...config import get_settings
+ 
+ _prompt_path = Path(__file__).parent / "system_prompt.md"
+ SYSTEM_PROMPT = _prompt_path.read_text(encoding="utf-8").strip()
+@@ -12,8 +13,36 @@ SYSTEM_PROMPT = _prompt_path.read_text(encoding="utf-8").strip()
+ 
+ # Load and return the pre-defined system prompt from markdown file
+ def build_system_prompt() -> str:
+-    """Return the static system prompt for the interaction agent."""
+-    return SYSTEM_PROMPT
++    """Build the shared prompt with instructions for the selected draft display path."""
++    direct = get_settings().draft_ready_enabled
++    result_instructions = (
++        "An agent_message with type draft_ready means the backend has already displayed "
++        "that exact draft. Do not call send_draft or ask for approval again for that result."
++        if direct else
++        "An agent_message with type draft_ready contains a stored draft that has NOT been "
++        "displayed. Call send_draft with its exact to, subject, and body to show it for review. "
++        "When asking for approval, call send_message_to_user in the same tool-call response "
++        "as send_draft, since successful draft display ends the turn."
++    )
++    result_instructions += (
++        " Reuse its agent_name and draft_id when the user requests a revision or approves "
++        "sending. A draft_ready result is not approval to send. Do not send without the "
++        "user's approval, and never claim a send succeeded before its execution result."
++    )
++    display_instructions = (
++        "- Execution agents create stored drafts. "
++        + ("The backend displays their exact contents." if direct else
++           "Use send_draft to display their exact contents; this tool only displays an existing draft.")
++        + " Do not invent a draft ID or treat displayed text as a stored draft."
++    )
++    mode_instructions = (
++        "Draft-ready messages are already displayed by the backend; do not repeat them."
++        if direct else
++        "Show completed drafts through send_draft unless the same draft has already been shown."
++    )
++    return (SYSTEM_PROMPT.replace("{{DRAFT_RESULT_INSTRUCTIONS}}", result_instructions)
++            .replace("{{DRAFT_DISPLAY_INSTRUCTIONS}}", display_instructions)
++            .replace("{{DRAFT_MODE_INSTRUCTIONS}}", mode_instructions))
+ 
+ 
+ # Build structured message with conversation history, active agents, and current turn
+diff --git a/server/agents/interaction_agent/metrics.py b/server/agents/interaction_agent/metrics.py
+index 0a584b8..3a54001 100644
+--- a/server/agents/interaction_agent/metrics.py
++++ b/server/agents/interaction_agent/metrics.py
+@@ -1,4 +1,4 @@
+-"""Optional, append-only counts of interaction model requests.
++"""Optional, append-only counts of interaction turns, model requests, and provider token usage.
+ 
+ Enable with OPENPOKE_INTERACTION_METRICS_PATH. No prompts or replies are stored.
+ """
+@@ -16,13 +16,15 @@ TurnType = Literal["user", "agent"]
+ _lock = threading.Lock()
+ 
+ 
+-def record_llm_call(turn_type: TurnType) -> None:
++def _record(event_type: str, turn_type: TurnType, **fields) -> None:
+     path = os.environ.get("OPENPOKE_INTERACTION_METRICS_PATH")
+     if not path:
+         return
+     event = {
+         "run_id": os.environ.get("OPENPOKE_BENCHMARK_RUN_ID", "manual"),
+         "turn_type": turn_type,
++        "event_type": event_type,
++        **fields,
+         "timestamp": datetime.now(timezone.utc).isoformat(),
+     }
+     try:
+@@ -34,3 +36,28 @@ def record_llm_call(turn_type: TurnType) -> None:
+         logging.getLogger("openpoke.server").warning(
+             "Could not write interaction LLM metrics", exc_info=True
+         )
++
++
++def record_turn(turn_type: TurnType) -> None:
++    """Count one invocation, even when it makes zero or several LLM calls."""
++    _record("turn", turn_type)
++
++
++def record_llm_call(turn_type: TurnType) -> None:
++    """Count an attempted request, including requests that later fail."""
++    _record("llm_call", turn_type)
++
++
++def record_llm_usage(turn_type: TurnType, response: dict) -> None:
++    """Use provider counts; missing usage remains unknown, never estimated."""
++    usage = response.get("usage")
++    if not isinstance(usage, dict):
++        usage = {}
++
++    def token_count(key):
++        value = usage.get(key)
++        return value if type(value) is int and value >= 0 else None
++
++    _record("llm_usage", turn_type,
++            input_tokens=token_count("prompt_tokens"),
++            output_tokens=token_count("completion_tokens"))
+diff --git a/server/agents/interaction_agent/runtime.py b/server/agents/interaction_agent/runtime.py
+index a8cba17..c378c33 100644
+--- a/server/agents/interaction_agent/runtime.py
++++ b/server/agents/interaction_agent/runtime.py
+@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Set
+ from .agent import build_system_prompt, prepare_message_with_history
+ from .tools import ToolResult, get_tool_schemas, handle_tool_call
+ from ..tool_protocol import describes_tool_call
+-from .metrics import TurnType, record_llm_call
++from .metrics import TurnType, record_llm_call, record_llm_usage, record_turn
+ from ...config import get_settings
+ from ...services.conversation import get_conversation_log, get_working_memory_log
+ from ...openrouter_client import request_chat_completion
+@@ -57,7 +57,7 @@ class InteractionAgentRuntime:
+         self.conversation_log = get_conversation_log()
+         self.working_memory_log = get_working_memory_log()
+         self.tool_schemas = [tool for tool in get_tool_schemas()
+-                             if tool["function"]["name"] != "send_draft"]
++                             if not settings.draft_ready_enabled or tool["function"]["name"] != "send_draft"]
+ 
+         if not self.api_key:
+             raise ValueError(
+@@ -68,6 +68,7 @@ class InteractionAgentRuntime:
+     async def execute(self, user_message: str) -> InteractionResult:
+         """Handle a user-authored message."""
+ 
++        record_turn("user")
+         try:
+             transcript_before = self._load_conversation_transcript()
+             self.conversation_log.record_user_message(user_message)
+@@ -102,6 +103,7 @@ class InteractionAgentRuntime:
+     # Handle incoming messages from execution agents and generate appropriate responses
+     async def handle_agent_message(self, agent_message: str) -> InteractionResult:
+         """Process a status update emitted by an execution agent."""
++        record_turn("agent")
+ 
+         try:
+             transcript_before = self._load_conversation_transcript()
+@@ -249,13 +251,15 @@ class InteractionAgentRuntime:
+             extra={"model": self.model, "tools": len(self.tool_schemas)},
+         )
+         record_llm_call(turn_type)
+-        return await request_chat_completion(
++        response = await request_chat_completion(
+             model=self.model,
+             messages=messages,
+             system=system_prompt,
+             api_key=self.api_key,
+             tools=self.tool_schemas,
+         )
++        record_llm_usage(turn_type, response)
++        return response
+ 
+     # Extract the assistant's message from the OpenRouter API response structure
+     def _extract_assistant_message(self, response: Dict[str, Any]) -> Dict[str, Any]:
+@@ -325,7 +329,7 @@ class InteractionAgentRuntime:
+     # Execute tool calls with error handling and logging, returning standardized results
+     def _execute_tool(self, tool_call: _ToolCall) -> ToolResult:
+         """Execute a tool call and convert low-level errors into structured results."""
+-        if tool_call.name == "send_draft":
++        if tool_call.name == "send_draft" and get_settings().draft_ready_enabled:
+             return ToolResult(success=False, payload={"error":
+                 "Stored drafts are created by execution agents and displayed automatically. "
+                 "Use send_message_to_agent to create or revise a draft."})
+diff --git a/server/agents/interaction_agent/system_prompt.md b/server/agents/interaction_agent/system_prompt.md
+index 47aaab4..6af4874 100644
+--- a/server/agents/interaction_agent/system_prompt.md
++++ b/server/agents/interaction_agent/system_prompt.md
+@@ -14,11 +14,7 @@ send_message_to_agent only means the work was queued; never claim it completed.
+ Delegate actual mailbox changes (creating, revising, or sending a stored draft)
+ to execution agents. Merely displaying draft text does not create a Gmail draft.
+ Do not repeat an earlier task when answering an unrelated new message or alert.
+-An agent_message with type draft_ready means the backend has already displayed
+-that exact draft. Do not call send_draft or ask for approval again for that result.
+-Reuse its agent_name and draft_id when the user requests a revision or approves
+-sending. A draft_ready result is not approval to send. Do not send without the
+-user's approval, and never claim a send succeeded before its execution result.
++{{DRAFT_RESULT_INSTRUCTIONS}}
+ 
+ Send Message to Agent Tool Usage
+ 
+@@ -35,7 +31,7 @@ Send Message to User Tool Usage
+ - `send_message_to_user(message)` records a natural-language reply for the user to read. Use it for acknowledgements, status updates, confirmations, or wrap-ups.
+ 
+ Draft Delivery
+-- Execution agents create stored drafts. The backend displays their exact contents. Do not invent a draft ID or treat displayed text as a stored draft.
++{{DRAFT_DISPLAY_INSTRUCTIONS}}
+ - Never write tool calls, Python code, or XML reply tags in user-facing text. Invoke tools using the tool-call API.
+ 
+ Wait Tool Usage
+@@ -48,7 +44,7 @@ Wait Tool Usage
+ Interaction Modes
+ 
+ - When the input contains `<new_user_message>`, decide if you can answer outright. If you need help, first acknowledge the user and explain the next step with `send_message_to_user`, then call `send_message_to_agent` with clear instructions. Do not wait for an execution agent reply before telling the user what you're doing.
+-- When the input contains `<new_agent_message>`, treat each `<agent_message>` block as an execution agent result. Summarize the outcome for the user using `send_message_to_user`. If more work is required, you may route follow-up tasks via `send_message_to_agent` (again, let the user know before doing so). Draft-ready messages are already displayed by the backend; do not repeat them.
++- When the input contains `<new_agent_message>`, treat each `<agent_message>` block as an execution agent result. Summarize the outcome for the user using `send_message_to_user`. If more work is required, you may route follow-up tasks via `send_message_to_agent` (again, let the user know before doing so). {{DRAFT_MODE_INSTRUCTIONS}}
+ - Email watcher notifications arrive as `<agent_message>` entries prefixed with `Important email watcher notification:`. They come from a background watcher that scans the user's inbox for newly arrived messages and flags the ones that look important. Summarize why the email matters and promptly notify the user about it.
+ - The XML-like tags are just structure—do not echo them back to the user.
+ 
+diff --git a/server/config.py b/server/config.py
+index db07bc4..c44000f 100644
+--- a/server/config.py
++++ b/server/config.py
+@@ -32,7 +32,7 @@ DEFAULT_APP_NAME = "OpenPoke Server"
+ DEFAULT_APP_VERSION = "0.3.0"
+ DEFAULT_LLM_MODEL = os.getenv(
+     "OPENROUTER_MODEL",
+-    "google/gemini-2.5-flash-lite",
++    "google/gemini-2.5-flash",
+ )
+ 
+ 
+@@ -54,6 +54,9 @@ class Settings(BaseModel):
+     server_host: str = Field(default=os.getenv("OPENPOKE_HOST", "0.0.0.0"))
+     server_port: int = Field(default=_env_int("OPENPOKE_PORT", 8001))
+ 
++    # Completed draft display; benchmark toggles this in its isolated worker.
++    draft_ready_enabled: bool = Field(default=os.getenv("OPENPOKE_DRAFT_READY", "1") != "0")
++
+     # LLM model selection
+     interaction_agent_model: str = Field(default=DEFAULT_LLM_MODEL)
+     execution_agent_model: str = Field(default=DEFAULT_LLM_MODEL)

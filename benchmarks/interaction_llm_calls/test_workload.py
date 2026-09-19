@@ -3,9 +3,12 @@ from datetime import timedelta
 import json
 from pathlib import Path
 import unittest
+import subprocess
+import sys
+import tempfile
 
 from sample_tools import Mailbox, current_event
-from workload import configure_draft_delivery, replay
+from workload import ROOT, BENCHMARK_MODEL, select_server_root, replay
 from check_outcomes import check, evaluate
 
 
@@ -13,26 +16,34 @@ FIXTURE = json.loads((Path(__file__).resolve().parents[1] / "sample_inbox.json")
 
 
 class WorkloadTests(unittest.TestCase):
-    def test_draft_delivery_mode_changes_only_batch_routing(self):
-        class Manager:
-            def _format_batch_payload(self, results):
-                return "base"
+    def test_both_modes_select_current_repository(self):
+        self.assertEqual(select_server_root(True), ROOT)
+        self.assertEqual(select_server_root(False), ROOT)
+        self.assertEqual(BENCHMARK_MODEL, "google/gemini-2.5-flash")
 
-            def _deliver_structured_results(self, results):
-                return []
-
-        configure_draft_delivery(Manager, "direct")
-        self.assertEqual(Manager()._deliver_structured_results(["draft"]), [])
-        configure_draft_delivery(Manager, "interaction")
-        result = type("Result", (), {"structured_results": [{
-            "type": "draft_ready", "to": "a@example.test",
-            "subject": "Hello", "body": "Draft body",
-        }]})()
-        self.assertEqual(Manager()._deliver_structured_results([result]), [result])
-        payload = Manager()._format_batch_payload([result])
-        self.assertIn("To: a@example.test", payload)
-        self.assertIn("Subject: Hello", payload)
-        self.assertIn("Draft body", payload)
+    def test_both_modes_really_display_drafts(self):
+        for enabled in (False, True):
+            with self.subTest(draft_ready=enabled), tempfile.TemporaryDirectory() as directory:
+                output_dir = Path(directory)
+                command = [sys.executable, str(ROOT / "benchmarks/interaction_llm_calls/runner.py"),
+                           "--output-dir", str(output_dir), "--", sys.executable,
+                           str(ROOT / "benchmarks/interaction_llm_calls/workload.py"),
+                           "--draft-ready" if enabled else "--no-draft-ready",
+                           "--smoke", "--draft-check", "--timeout", "10"]
+                result = subprocess.run(command, capture_output=True, text=True, timeout=20)
+                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                report = json.loads(next(output_dir.glob("*/report.json")).read_text())
+                self.assertEqual(report["task_outcomes"], "passed")
+                self.assertEqual(report["model"], BENCHMARK_MODEL)
+                self.assertEqual(report["server_root"], str(select_server_root(enabled)))
+                self.assertEqual(report["draft_ready"], enabled)
+                if enabled:
+                    self.assertEqual(report["total_calls"], 0)
+                    self.assertEqual(report["total_turns"], 0)
+                else:
+                    self.assertEqual(report["agent_turn_calls"], 1)
+                    self.assertEqual(report["agent_turns"], 1)
+                    self.assertEqual(report["user_turns"], 0)
 
     @staticmethod
     def outcome_workload(event_id, evidence, received_at="2026-09-17T10:00:00+05:30"):

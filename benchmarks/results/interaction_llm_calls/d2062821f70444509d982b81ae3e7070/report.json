@@ -1,0 +1,32 @@
+{
+  "run_id": "d2062821f70444509d982b81ae3e7070",
+  "command_exit_code": 1,
+  "error": null,
+  "task_outcomes": "failed",
+  "total_calls": 102,
+  "user_turn_calls": 61,
+  "agent_turn_calls": 41,
+  "total_turns": 88,
+  "user_turns": 55,
+  "agent_turns": 33,
+  "input_tokens": 1122607,
+  "output_tokens": 4993,
+  "calls_with_token_usage": 99,
+  "calls_without_token_usage": 3,
+  "mode": "live_models_fake_mailbox",
+  "message_checks": {
+    "messages_checked": 55,
+    "expected_outcomes": 67,
+    "PASS": 15,
+    "FAIL": 12,
+    "MANUAL_REVIEW": 28,
+    "global_checks_passed": true
+  },
+  "server_root": "/home/shadab/general_magic_take_home/openpoke-draft-ready",
+  "server_commit": "56c6c1a9717a5c78b3382bcfda6b687bbfaab279",
+  "server_dirty": true,
+  "model": "google/gemini-2.5-flash",
+  "draft_delivery": "direct",
+  "draft_ready": true,
+  "comparison": "same_repo_draft_ready_toggle"
+}

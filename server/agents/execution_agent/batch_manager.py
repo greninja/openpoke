@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
@@ -10,6 +11,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from .runtime import ExecutionAgentRuntime, ExecutionResult
 from ...logging_config import logger
+from ...config import get_settings
 from ...services.draft_delivery import display_draft_for_review
 
 
@@ -185,6 +187,10 @@ class ExecutionBatchManager:
             status = "SUCCESS" if result.success else "FAILED"
             response_text = (result.response or "(no response provided)").strip()
             entries.append(f"[{status}] {result.agent_name}: {response_text}")
+            if not get_settings().draft_ready_enabled:
+                for item in result.structured_results:
+                    if item.get("type") == "draft_ready":
+                        entries.append(json.dumps({**item, "agent_name": result.agent_name}, ensure_ascii=False))
         return "\n".join(entries)
 
     def _deliver_structured_results(
@@ -192,6 +198,9 @@ class ExecutionBatchManager:
         results: List[ExecutionResult],
     ) -> List[ExecutionResult]:
         """Display known result types and return results that still need LLM judgment."""
+
+        if not get_settings().draft_ready_enabled:
+            return list(results)
 
         interaction_results: List[ExecutionResult] = []
 

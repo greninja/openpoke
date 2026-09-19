@@ -1,0 +1,184 @@
+{
+  "reviewer": "Codex assistant",
+  "policy": "Apply fixture requirements to visible replies and saved tool evidence. Contextual short answers are accepted when referent is unambiguous. U20 requires avoiding guarantees about travel/availability. Shared evidence is noted; ambiguous U34 recovery remains unresolved. Automatic PASS/FAIL rows are retained, not replaced.",
+  "manual_only_summary": {
+    "PASS": 21,
+    "FAIL": 6,
+    "MANUAL_REVIEW": 1
+  },
+  "combined_summary": {
+    "PASS": 36,
+    "FAIL": 18,
+    "MANUAL_REVIEW": 1
+  },
+  "rows": [
+    {
+      "id": "U01",
+      "status": "PASS",
+      "reason": "Identifies OpenPoke and its assistant role.",
+      "evidence": "outcomes.json rows[U01].visible_replies; workload.json events[U01].evidence"
+    },
+    {
+      "id": "U02",
+      "status": "PASS",
+      "reason": "Acknowledges short replies and Asia/Kolkata time.",
+      "evidence": "outcomes.json rows[U02].visible_replies; workload.json events[U02].evidence"
+    },
+    {
+      "id": "U03",
+      "status": "PASS",
+      "reason": "Answers Asia/Kolkata.",
+      "evidence": "outcomes.json rows[U03].visible_replies; workload.json events[U03].evidence"
+    },
+    {
+      "id": "U04",
+      "status": "FAIL",
+      "reason": "Includes September 16 hotel, meeting, and invoice emails despite the fixture requiring only six September 17 emails.",
+      "evidence": "outcomes.json rows[U04].visible_replies; workload.json events[U04].evidence"
+    },
+    {
+      "id": "U05",
+      "status": "PASS",
+      "reason": "Identifies invoice due today and security sign-in review.",
+      "evidence": "outcomes.json rows[U05].visible_replies; workload.json events[U05].evidence"
+    },
+    {
+      "id": "U06",
+      "status": "PASS",
+      "reason": "Finds AI 2851 with Mumbai T2 departure at 07:40 and Bengaluru arrival at 09:45 for tomorrow.",
+      "evidence": "outcomes.json rows[U06].visible_replies; workload.json events[U06].evidence"
+    },
+    {
+      "id": "U07",
+      "status": "PASS",
+      "reason": "Answers T2 for the current flight.",
+      "evidence": "outcomes.json rows[U07].visible_replies; workload.json events[U07].evidence"
+    },
+    {
+      "id": "U08",
+      "status": "PASS",
+      "reason": "Answers 09:45 IST for the current flight.",
+      "evidence": "outcomes.json rows[U08].visible_replies; workload.json events[U08].evidence"
+    },
+    {
+      "id": "U10",
+      "status": "PASS",
+      "reason": "Warm Alice revision asks for meeting notes; automatic checks confirm one active unsent version.",
+      "evidence": "outcomes.json rows[U10].visible_replies; workload.json events[U10].evidence"
+    },
+    {
+      "id": "U13",
+      "status": "PASS",
+      "reason": "Reports invoice AC-104, INR 2400 due September 17, and parcel September 19 14:00\u201318:00.",
+      "evidence": "outcomes.json rows[U13].visible_replies; workload.json events[U13].evidence"
+    },
+    {
+      "id": "U14",
+      "status": "FAIL",
+      "reason": "No visible answer to invoice-number and parcel-arrival questions.",
+      "evidence": "outcomes.json rows[U14].visible_replies; workload.json events[U14].evidence"
+    },
+    {
+      "id": "U19",
+      "status": "PASS",
+      "reason": "Reports Garden Hotel September 18\u201320, 14:00 check-in, and Alice meeting September 18 at 16:00.",
+      "evidence": "outcomes.json rows[U19].visible_replies; workload.json events[U19].evidence"
+    },
+    {
+      "id": "U20",
+      "status": "FAIL",
+      "reason": "Says the user will have plenty of time; gives scheduled times but guarantees feasibility without allowing for travel or availability, contrary to the fixture.",
+      "evidence": "outcomes.json rows[U20].visible_replies; workload.json events[U20].evidence"
+    },
+    {
+      "id": "U23",
+      "status": "PASS",
+      "reason": "Reports AC-104 INR 2400 unpaid and AC-103 INR 3600 paid, total INR 6000.",
+      "evidence": "outcomes.json rows[U23].visible_replies; workload.json events[U23].evidence"
+    },
+    {
+      "id": "U27",
+      "status": "PASS",
+      "reason": "Identifies AC-104 INR 2400 as the unpaid invoice; contextual shorthand accepted.",
+      "evidence": "outcomes.json rows[U27].visible_replies; workload.json events[U27].evidence"
+    },
+    {
+      "id": "U30",
+      "status": "PASS",
+      "reason": "Explicitly answers Terminal 2 despite overlapping hotel work.",
+      "evidence": "outcomes.json rows[U30].visible_replies; workload.json events[U30].evidence"
+    },
+    {
+      "id": "U34",
+      "status": "MANUAL_REVIEW",
+      "reason": "The event-owned U34 lookup fails as injected. Successful lookups under overlapping background event labels then retrieve M03 and the visible answer gives the due date. Recovery cannot be cleanly attributed to U34; do not award retrieval success.",
+      "evidence": "outcomes.json rows[U34].visible_replies; workload.json events[U34].evidence"
+    },
+    {
+      "id": "U35",
+      "status": "PASS",
+      "reason": "Gives INR 1250 debit to Indigo/Paytm without confusing invoice amount; evidence overlaps background notifications.",
+      "evidence": "outcomes.json rows[U35].visible_replies; workload.json events[U35].evidence"
+    },
+    {
+      "id": "U37",
+      "status": "FAIL",
+      "reason": "No visible answer to the PR-summary request.",
+      "evidence": "outcomes.json rows[U37].visible_replies; workload.json events[U37].evidence"
+    },
+    {
+      "id": "U39",
+      "status": "PASS",
+      "reason": "Explicitly distinguishes September 28 as later than tomorrow.",
+      "evidence": "outcomes.json rows[U39].visible_replies; workload.json events[U39].evidence"
+    },
+    {
+      "id": "U41",
+      "status": "FAIL",
+      "reason": "Answers tomorrow\u2019s flight time but says it does not have the later flight details.",
+      "evidence": "outcomes.json rows[U41].visible_replies; workload.json events[U41].evidence"
+    },
+    {
+      "id": "U42",
+      "status": "PASS",
+      "reason": "Identifies the desk-break reminder. This grades the answer; background notification success is assessed separately.",
+      "evidence": "outcomes.json rows[U42].visible_replies; workload.json events[U42].evidence"
+    },
+    {
+      "id": "U43",
+      "status": "PASS",
+      "reason": "Distinguishes unpaid invoice INR 2400 from bank debit INR 1250.",
+      "evidence": "outcomes.json rows[U43].visible_replies; workload.json events[U43].evidence"
+    },
+    {
+      "id": "U44",
+      "status": "PASS",
+      "reason": "Identifies OpenPoke and Asia/Kolkata.",
+      "evidence": "outcomes.json rows[U44].visible_replies; workload.json events[U44].evidence"
+    },
+    {
+      "id": "U45",
+      "status": "FAIL",
+      "reason": "No visible answer to tomorrow\u2019s flight-time question.",
+      "evidence": "outcomes.json rows[U45].visible_replies; workload.json events[U45].evidence"
+    },
+    {
+      "id": "U46",
+      "status": "PASS",
+      "reason": "Answers T2 for tomorrow\u2019s flight.",
+      "evidence": "outcomes.json rows[U46].visible_replies; workload.json events[U46].evidence"
+    },
+    {
+      "id": "U48",
+      "status": "PASS",
+      "reason": "Reports updated PKG-42 window September 19 16:00\u201320:00; supporting search includes M14 after B06 receipt. Evidence is shared with the background notification.",
+      "evidence": "outcomes.json rows[U48].visible_replies; workload.json events[U48].evidence"
+    },
+    {
+      "id": "U54",
+      "status": "PASS",
+      "reason": "Answers AC-104 during overlapping Helen draft work.",
+      "evidence": "outcomes.json rows[U54].visible_replies; workload.json events[U54].evidence"
+    }
+  ]
+}

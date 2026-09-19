@@ -44,6 +44,3 @@ server/venv/
 # Generated documentation / analysis artifacts
 server/repomix-output.txt
 server/plans/
-benchmarks/results/
-
-AGENTS.md

@@ -10,6 +10,24 @@ from .runtime import ExecutionAgentRuntime, ExecutionResult
 
 
 class DraftReadyResultTests(unittest.TestCase):
+    def test_disabled_delivery_forwards_exact_draft_and_other_results(self):
+        from types import SimpleNamespace
+        result = ExecutionResult("Email Alice", True, "Draft stored.", structured_results=[{
+            "type": "draft_ready", "draft_id": "D1", "task_id": "T1",
+            "to": "alice@example.test", "subject": "Exact subject", "body": "Exact body",
+        }], draft_only=True)
+        failure = ExecutionResult("Search", False, "Lookup failed")
+        with patch("server.agents.execution_agent.batch_manager.get_settings",
+                   return_value=SimpleNamespace(draft_ready_enabled=False)), patch(
+                       "server.agents.execution_agent.batch_manager.display_draft_for_review") as display:
+            manager = ExecutionBatchManager()
+            self.assertEqual(manager._deliver_structured_results([result, failure]), [result, failure])
+            display.assert_not_called()
+            payload = manager._format_batch_payload([result, failure])
+            for text in ('"draft_id": "D1"', '"agent_name": "Email Alice"',
+                         '"subject": "Exact subject"', '"body": "Exact body"', "Lookup failed"):
+                self.assertIn(text, payload)
+
     def test_builds_draft_ready_from_successful_tool_call(self) -> None:
         result = ExecutionAgentRuntime._build_structured_result(
             "gmail_create_draft",

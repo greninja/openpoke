@@ -1,0 +1,292 @@
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:36:52.271347+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:36:52.271805+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 2755, "output_tokens": 34, "timestamp": "2026-09-19T11:36:54.032187+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:36:54.039396+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:36:54.041138+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 2865, "output_tokens": 27, "timestamp": "2026-09-19T11:36:55.416141+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:36:55.416729+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 2933, "output_tokens": 19, "timestamp": "2026-09-19T11:36:56.584456+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:36:56.587217+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:36:56.587561+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 2956, "output_tokens": 6, "timestamp": "2026-09-19T11:36:58.237989+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:36:58.248938+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:36:58.250493+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 3031, "output_tokens": 20, "timestamp": "2026-09-19T11:36:59.664993+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:36:59.666380+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 3085, "output_tokens": 21, "timestamp": "2026-09-19T11:37:01.062345+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:37:03.184512+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:03.186195+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 3187, "output_tokens": 54, "timestamp": "2026-09-19T11:37:04.974253+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:04.974703+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": null, "output_tokens": null, "timestamp": "2026-09-19T11:37:06.061457+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:06.062114+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:06.062491+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 3301, "output_tokens": 54, "timestamp": "2026-09-19T11:37:07.737624+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:37:09.662358+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:09.662808+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 3486, "output_tokens": 48, "timestamp": "2026-09-19T11:37:11.352212+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:11.354086+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": null, "output_tokens": null, "timestamp": "2026-09-19T11:37:12.975234+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:12.994349+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:12.996399+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 3595, "output_tokens": 64, "timestamp": "2026-09-19T11:37:14.573308+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:37:17.471150+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:17.471691+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 3740, "output_tokens": 48, "timestamp": "2026-09-19T11:37:18.714390+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:18.714824+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 3850, "output_tokens": 40, "timestamp": "2026-09-19T11:37:20.160155+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:20.167849+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:20.169534+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 3848, "output_tokens": 35, "timestamp": "2026-09-19T11:37:21.947741+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:37:23.634162+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:23.635956+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 3986, "output_tokens": 14, "timestamp": "2026-09-19T11:37:25.188068+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:25.189302+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 4028, "output_tokens": 6, "timestamp": "2026-09-19T11:37:26.432222+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:26.453133+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:26.454987+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 4059, "output_tokens": 28, "timestamp": "2026-09-19T11:37:28.213958+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:37:29.613948+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:29.615777+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 4169, "output_tokens": 11, "timestamp": "2026-09-19T11:37:30.835339+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:30.844681+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:30.846561+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 4263, "output_tokens": 26, "timestamp": "2026-09-19T11:37:32.344743+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:32.346438+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 4329, "output_tokens": 36, "timestamp": "2026-09-19T11:37:33.801356+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:37.172137+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:37.173042+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 4550, "output_tokens": 29, "timestamp": "2026-09-19T11:37:38.458662+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:42.679876+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:42.681763+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 4851, "output_tokens": 110, "timestamp": "2026-09-19T11:37:44.489284+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:48.308971+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:48.309401+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 5394, "output_tokens": 54, "timestamp": "2026-09-19T11:37:49.983794+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:37:52.748111+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:52.750821+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 5477, "output_tokens": 19, "timestamp": "2026-09-19T11:37:54.019327+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:54.020620+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 5529, "output_tokens": 11, "timestamp": "2026-09-19T11:37:55.572305+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:37:55.595858+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:37:55.598152+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 5560, "output_tokens": 67, "timestamp": "2026-09-19T11:37:57.242811+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:38:00.904718+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:00.907031+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 5840, "output_tokens": 144, "timestamp": "2026-09-19T11:38:02.678941+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:02.700398+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:02.702756+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 6058, "output_tokens": 35, "timestamp": "2026-09-19T11:38:03.970212+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:03.991661+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:03.994063+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 6187, "output_tokens": 179, "timestamp": "2026-09-19T11:38:06.581749+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:10.326800+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:10.329242+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 6784, "output_tokens": 32, "timestamp": "2026-09-19T11:38:11.775431+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:38:14.818013+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:14.820488+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 6872, "output_tokens": 15, "timestamp": "2026-09-19T11:38:16.439116+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:16.456409+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:16.460893+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 6971, "output_tokens": 36, "timestamp": "2026-09-19T11:38:18.004788+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:22.356255+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:22.358864+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 7266, "output_tokens": 36, "timestamp": "2026-09-19T11:38:23.808431+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:38:27.011602+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:27.014362+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 7321, "output_tokens": 5, "timestamp": "2026-09-19T11:38:28.853298+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:28.868157+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:28.870781+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 7401, "output_tokens": 73, "timestamp": "2026-09-19T11:38:30.873143+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:38:35.191627+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:35.194354+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 7777, "output_tokens": 108, "timestamp": "2026-09-19T11:38:37.045477+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:37.056667+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:37.059403+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 7959, "output_tokens": 64, "timestamp": "2026-09-19T11:38:38.493778+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:38:40.430211+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:40.433051+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 8116, "output_tokens": 36, "timestamp": "2026-09-19T11:38:41.960693+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:41.970564+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:41.973325+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 8245, "output_tokens": 76, "timestamp": "2026-09-19T11:38:43.684341+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:47.389534+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:47.392408+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 8829, "output_tokens": 36, "timestamp": "2026-09-19T11:38:48.898830+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:38:53.791498+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:53.794440+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 8997, "output_tokens": 44, "timestamp": "2026-09-19T11:38:55.313218+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:55.314508+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": null, "output_tokens": null, "timestamp": "2026-09-19T11:38:56.912749+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:56.922712+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:56.925722+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:57.947751+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:57.950903+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:38:58.927646+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:38:58.930763+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 9107, "output_tokens": 71, "timestamp": "2026-09-19T11:38:59.360916+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 9156, "output_tokens": 122, "timestamp": "2026-09-19T11:39:00.113139+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 9203, "output_tokens": 185, "timestamp": "2026-09-19T11:39:01.321841+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:07.393621+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:07.397065+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 11222, "output_tokens": 135, "timestamp": "2026-09-19T11:39:09.928499+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:09.942292+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:09.945780+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 11431, "output_tokens": 41, "timestamp": "2026-09-19T11:39:11.659248+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:14.423281+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:14.427050+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 11489, "output_tokens": 7, "timestamp": "2026-09-19T11:39:16.036712+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:16.050692+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:16.054443+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 11567, "output_tokens": 29, "timestamp": "2026-09-19T11:39:17.734843+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:19.749495+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:19.753092+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 11756, "output_tokens": 31, "timestamp": "2026-09-19T11:39:21.282928+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:21.296753+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:21.300160+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:22.328931+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:22.332511+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 11877, "output_tokens": 50, "timestamp": "2026-09-19T11:39:22.793202+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:23.303097+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:23.306637+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 11921, "output_tokens": 50, "timestamp": "2026-09-19T11:39:24.014440+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 11960, "output_tokens": 34, "timestamp": "2026-09-19T11:39:25.602210+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:27.451487+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:27.455177+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 12704, "output_tokens": 13, "timestamp": "2026-09-19T11:39:29.170402+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:29.184759+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:29.188348+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 12779, "output_tokens": 30, "timestamp": "2026-09-19T11:39:30.682215+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:33.296045+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:33.299878+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 12835, "output_tokens": 6, "timestamp": "2026-09-19T11:39:35.109251+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:35.160593+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:35.164409+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 12929, "output_tokens": 43, "timestamp": "2026-09-19T11:39:36.851429+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:39.887947+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:39.891823+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 13177, "output_tokens": 69, "timestamp": "2026-09-19T11:39:42.267446+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:46.992107+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:46.995955+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:48.007704+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:48.011136+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 13428, "output_tokens": 36, "timestamp": "2026-09-19T11:39:48.570364+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:49.004254+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:49.008169+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 13487, "output_tokens": 76, "timestamp": "2026-09-19T11:39:49.826928+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:50.060269+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:50.064292+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 13544, "output_tokens": 70, "timestamp": "2026-09-19T11:39:50.741938+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:51.012060+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:51.016016+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 13679, "output_tokens": 132, "timestamp": "2026-09-19T11:39:52.450910+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 13783, "output_tokens": 41, "timestamp": "2026-09-19T11:39:53.035060+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:53.036296+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 13879, "output_tokens": 33, "timestamp": "2026-09-19T11:39:54.685930+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:39:55.459103+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:55.463201+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 14589, "output_tokens": 26, "timestamp": "2026-09-19T11:39:56.976613+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:39:57.005478+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:39:57.009820+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 14682, "output_tokens": 47, "timestamp": "2026-09-19T11:39:59.331990+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:02.551674+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:02.555778+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 14791, "output_tokens": 21, "timestamp": "2026-09-19T11:40:04.232284+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:04.270472+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:04.274577+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 14875, "output_tokens": 39, "timestamp": "2026-09-19T11:40:05.932171+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:05.940503+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 14967, "output_tokens": 31, "timestamp": "2026-09-19T11:40:08.014324+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:08.036954+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:08.041107+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:09.057800+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:09.062117+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 14990, "output_tokens": 48, "timestamp": "2026-09-19T11:40:09.823184+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:10.044253+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:10.048455+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 15065, "output_tokens": 112, "timestamp": "2026-09-19T11:40:11.257740+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 15119, "output_tokens": 59, "timestamp": "2026-09-19T11:40:11.690172+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:15.360467+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:15.364968+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 15780, "output_tokens": 33, "timestamp": "2026-09-19T11:40:17.138078+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:20.204498+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:20.209073+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 15836, "output_tokens": 7, "timestamp": "2026-09-19T11:40:21.661748+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:21.717049+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:21.721555+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 15919, "output_tokens": 30, "timestamp": "2026-09-19T11:40:24.056269+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:27.558918+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:27.563609+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 16091, "output_tokens": 74, "timestamp": "2026-09-19T11:40:29.567655+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:29.639653+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:29.644107+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16233, "output_tokens": 19, "timestamp": "2026-09-19T11:40:31.634440+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:34.482249+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:34.486858+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 16329, "output_tokens": 11, "timestamp": "2026-09-19T11:40:36.040537+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:36.086524+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:36.091050+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16417, "output_tokens": 38, "timestamp": "2026-09-19T11:40:37.884484+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:37.885775+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16507, "output_tokens": 30, "timestamp": "2026-09-19T11:40:39.631428+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:39.671763+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:39.676301+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16520, "output_tokens": 18, "timestamp": "2026-09-19T11:40:41.371697+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:41.408645+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:41.413386+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16607, "output_tokens": 21, "timestamp": "2026-09-19T11:40:43.122982+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:44.844222+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:44.848939+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 16713, "output_tokens": 21, "timestamp": "2026-09-19T11:40:46.197957+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:46.243685+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:46.248260+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16801, "output_tokens": 32, "timestamp": "2026-09-19T11:40:48.196738+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:48.229134+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:48.233784+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:40:49.234833+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:49.239507+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:50.240362+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:50.245102+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16919, "output_tokens": 158, "timestamp": "2026-09-19T11:40:50.714030+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 16962, "output_tokens": 152, "timestamp": "2026-09-19T11:40:51.416432+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 17030, "output_tokens": 126, "timestamp": "2026-09-19T11:40:52.514809+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:40:57.064259+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:57.069292+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 19071, "output_tokens": 103, "timestamp": "2026-09-19T11:40:59.794960+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:40:59.796894+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 19305, "output_tokens": 88, "timestamp": "2026-09-19T11:41:03.376512+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:03.400538+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:03.405710+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 19260, "output_tokens": 60, "timestamp": "2026-09-19T11:41:05.623569+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:41:09.194613+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:09.199799+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 19342, "output_tokens": 8, "timestamp": "2026-09-19T11:41:10.943586+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:10.976090+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:10.981326+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 19426, "output_tokens": 97, "timestamp": "2026-09-19T11:41:15.155126+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:19.290619+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:19.295848+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 19738, "output_tokens": 19, "timestamp": "2026-09-19T11:41:20.955440+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:41:23.624867+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:23.630253+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 19835, "output_tokens": 7, "timestamp": "2026-09-19T11:41:25.199107+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:25.252716+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:25.258068+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:26.265517+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:26.271284+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:27.260702+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:27.266100+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 19928, "output_tokens": 133, "timestamp": "2026-09-19T11:41:27.854821+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 19976, "output_tokens": 103, "timestamp": "2026-09-19T11:41:28.196846+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 20015, "output_tokens": 11, "timestamp": "2026-09-19T11:41:28.971550+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "turn", "timestamp": "2026-09-19T11:41:33.000009+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:33.005560+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "user", "event_type": "llm_usage", "input_tokens": 21024, "output_tokens": 58, "timestamp": "2026-09-19T11:41:34.967240+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:41:38.485043+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:38.490607+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 21114, "output_tokens": 21, "timestamp": "2026-09-19T11:41:40.258814+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "turn", "timestamp": "2026-09-19T11:41:40.284768+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:40.290270+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 21209, "output_tokens": 18, "timestamp": "2026-09-19T11:41:42.203529+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_call", "timestamp": "2026-09-19T11:41:42.204751+00:00"}
+{"run_id": "d2062821f70444509d982b81ae3e7070", "turn_type": "agent", "event_type": "llm_usage", "input_tokens": 21259, "output_tokens": 10, "timestamp": "2026-09-19T11:41:43.842654+00:00"}

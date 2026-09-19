@@ -32,7 +32,7 @@ DEFAULT_APP_NAME = "OpenPoke Server"
 DEFAULT_APP_VERSION = "0.3.0"
 DEFAULT_LLM_MODEL = os.getenv(
     "OPENROUTER_MODEL",
-    "google/gemini-2.5-flash-lite",
+    "google/gemini-2.5-flash",
 )
 
 
@@ -53,6 +53,9 @@ class Settings(BaseModel):
     # Server runtime
     server_host: str = Field(default=os.getenv("OPENPOKE_HOST", "0.0.0.0"))
     server_port: int = Field(default=_env_int("OPENPOKE_PORT", 8001))
+
+    # Completed draft display; benchmark toggles this in its isolated worker.
+    draft_ready_enabled: bool = Field(default=os.getenv("OPENPOKE_DRAFT_READY", "1") != "0")
 
     # LLM model selection
     interaction_agent_model: str = Field(default=DEFAULT_LLM_MODEL)

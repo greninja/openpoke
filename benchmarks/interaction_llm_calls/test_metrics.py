@@ -40,6 +40,7 @@ def runtime_namespace():
         json=json, dataclass=dataclass, field=field, Any=Any, Dict=Dict,
         List=List, Optional=Optional, Set=Set, ToolResult=SimpleNamespace,
         TurnType=metrics.TurnType, record_llm_call=metrics.record_llm_call,
+        record_llm_usage=metrics.record_llm_usage, record_turn=metrics.record_turn,
         describes_tool_call=load_file("tool_protocol", ROOT / "server/agents/tool_protocol.py").describes_tool_call,
         logger=Mock(), build_system_prompt=Mock(return_value="system"),
         prepare_message_with_history=Mock(return_value=[]),
@@ -64,8 +65,8 @@ class MetricsTests(unittest.TestCase):
             {"choices": [{"message": {"tool_calls": [{"id": "1", "function": {
                 "name": "send_message_to_user", "arguments": '{"message":"Working on it."}'
             }}]}}]},
-            {"choices": [{"message": {"content": "done"}}]},
-            {"choices": [{"message": {"content": "agent result"}}]},
+            {"choices": [{"message": {"content": "done"}}], "usage": {"prompt_tokens": 100, "completion_tokens": 20}},
+            {"choices": [{"message": {"content": "agent result"}}], "usage": {"prompt_tokens": 50, "completion_tokens": 10}},
             RuntimeError("simulated model failure"),
         ]
 
@@ -83,8 +84,55 @@ class MetricsTests(unittest.TestCase):
                 asyncio.run(exercise())
             self.assertEqual(runner.summarize(path, "test"), {
                 "total_calls": 4, "user_turn_calls": 3, "agent_turn_calls": 1,
+                "total_turns": 3, "user_turns": 2, "agent_turns": 1,
+                "input_tokens": 150, "output_tokens": 30,
+                "calls_with_token_usage": 2, "calls_without_token_usage": 2,
             })
             self.assertEqual(runner.summarize(path, "other")["total_calls"], 0)
+
+    def test_missing_usage_is_unknown_and_old_logs_still_count(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calls.jsonl"
+            path.write_text(json.dumps({"run_id": "old", "turn_type": "user"}) + "\n")
+            summary = runner.summarize(path, "old")
+            self.assertEqual(summary["total_calls"], 1)
+            self.assertIsNone(summary["total_turns"])
+            self.assertIsNone(summary["input_tokens"])
+            self.assertIsNone(summary["output_tokens"])
+            self.assertEqual(summary["calls_without_token_usage"], 1)
+
+    def test_original_runtime_concurrent_turns_and_usage(self):
+        from workload import instrument_unmetered_runtime
+        async def request(**kwargs):
+            await asyncio.sleep(0)
+            return {"usage": {"prompt_tokens": 12, "completion_tokens": 3}}
+
+        module = SimpleNamespace(request_chat_completion=request)
+        class Original:
+            async def execute(self, text):
+                await module.request_chat_completion()
+                await module.request_chat_completion()
+            async def handle_agent_message(self, text):
+                await module.request_chat_completion()
+        module.InteractionAgentRuntime = Original
+        instrument_unmetered_runtime(module, metrics.record_llm_call,
+                                     metrics.record_llm_usage, metrics.record_turn)
+        async def exercise():
+            await asyncio.gather(Original().execute("hello"), Original().handle_agent_message("done"))
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "calls.jsonl"
+            with patch.dict(os.environ, {"OPENPOKE_INTERACTION_METRICS_PATH": str(path),
+                                         "OPENPOKE_BENCHMARK_RUN_ID": "original"}):
+                asyncio.run(exercise())
+            summary = runner.summarize(path, "original")
+            self.assertEqual(summary["total_turns"], 2)
+            self.assertEqual(summary["user_turns"], 1)
+            self.assertEqual(summary["agent_turns"], 1)
+            self.assertEqual(summary["user_turn_calls"], 2)
+            self.assertEqual(summary["agent_turn_calls"], 1)
+            self.assertEqual(summary["input_tokens"], 36)
+            self.assertEqual(summary["output_tokens"], 9)
+            self.assertEqual(summary["calls_without_token_usage"], 0)
 
     def test_disabled_and_unwritable_metrics_do_not_break_requests(self):
         with patch.dict(os.environ, {"OPENPOKE_INTERACTION_METRICS_PATH": ""}):
