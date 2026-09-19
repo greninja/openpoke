@@ -12,11 +12,13 @@ OpenPoke is a simplified, open-source take on [Interaction Company’s](https://
 - Node.js 18+
 - npm 9+
 
+For the benchmark only, follow [these steps](benchmarks/results/interaction_llm_calls/comparison-same-repo-2026-09-19.md#run-the-benchmark). You need Python and an OpenRouter key; Node.js and Gmail setup are not required.
+
 ## Quickstart
 1. **Clone and enter the repo.**
    ```bash
-   git clone https://github.com/shlokkhemani/OpenPoke
-   cd OpenPoke
+   git clone https://github.com/greninja/openpoke.git
+   cd openpoke
    ```
 2. **Create a shared env file.** Copy the template and open it in your editor:
    ```bash

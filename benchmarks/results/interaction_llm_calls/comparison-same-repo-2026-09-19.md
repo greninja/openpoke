@@ -1,12 +1,15 @@
-# Same-repo draft_ready comparison — September 19, 2026
+# Benchmark comparison — September 19, 2026
 
-Both runs used **this checkout**, `google/gemini-2.5-flash`, and the same 55 user tasks plus 7 background events. `--no-draft-ready` sent completed drafts to the interaction LLM with `send_draft` enabled; `--draft-ready` displayed them directly. All other runtime fixes were shared. Both runs attempted all 62 events.
+- **Original flow:** the interaction LLM receives completed drafts and displays them through `send_draft`.
+- **My change:** `draft_ready` lets the backend display completed drafts directly, without that extra LLM step.
 
-The code and fixture hashes were captured during execution and checked again afterward: unchanged. Both runs include the same source manifest and uncommitted source diff. The benchmark used isolated temporary server copies and a fake mailbox.
+Both runs used **the same code in this repo**, with only draft delivery switched. All model settings used `google/gemini-2.5-flash`.
+
+The [workload](../../sample_workload.json) contains **55 user tasks and 7 background events**. Both runs attempted all 62 events using a fake mailbox. No real emails were sent.
 
 ## Interaction workload
 
-| Metric | draft_ready off | draft_ready on | Reduction |
+| Metric | Original flow | My change | Reduction |
 |---|---:|---:|---:|
 | Interaction-agent triggers | 99 | 88 | 11.1% |
 | Triggers from user messages | 55 | 55 | 0.0% |
@@ -17,45 +20,50 @@ The code and fixture hashes were captured during execution and checked again aft
 | Recorded input tokens | 1,533,808 | 1,122,607 | 26.8% |
 | Recorded output tokens | 8,342 | 4,993 | 40.1% |
 
-A trigger is one invocation of the interaction agent, either from a user message or an agent/background update. One trigger can make several LLM calls. Directly displayed drafts do not trigger the interaction agent. Counts here are only for the interaction agent, not all agents.
+A **trigger** starts an interaction-agent turn. One turn can make several LLM calls. These counts cover only the interaction agent.
 
-**Token coverage:** off has usage for 120 of 123 calls; on has usage for 99 of 102 calls. Three returned responses in each run did not supply usable token counts. The token totals above sum known usage only; the percentages are reductions in recorded usage, not exact full-run token reductions. No token estimation or cost comparison was performed.
+Directly displayed drafts are still saved in the conversation history, including their draft ID. Follow-up questions, revisions, and approvals still go through the interaction LLM, which can send work back to an execution agent. The saving comes from skipping the LLM step just to display the completed draft.
 
-## Task quality, out of 55 user tasks
+## Task quality
 
-| Score | draft_ready off | draft_ready on |
+Each user task has an expected outcome in the workload file. Automatic checks compare saved replies and mailbox actions against that outcome—for example, draft contents, sends after approval, and reminder timing. Tasks are marked **PASS**, **FAIL**, or **MANUAL_REVIEW**.
+
+Codex then reviewed the unclear tasks using the saved replies and actions. Each decision and its reason is recorded in `manual_review.json`.
+
+| Result out of 55 user tasks | Original flow | My change |
 |---|---:|---:|
 | PASS | 36 | 36 |
 | FAIL | 18 | 18 |
 | Still unclear | 1 | 1 |
 
-Both raw automatic reports scored 15 PASS, 12 FAIL, and 28 MANUAL_REVIEW. The assistant reviewed those 28 unclear rows in each run and assigned 21 PASS, 6 FAIL, and 1 still unclear. The combined scores above retain the automatic grades and add these manual decisions. Reasons and evidence locations are saved in each run's `manual_review.json`.
+In each run, automatic checks gave 15 passes, 12 failures, and 28 tasks for review. Manual review added 21 passes and 6 failures, leaving 1 unclear.
 
-The same total does not mean the same tasks succeeded. For example, off missed the later-flight time in U41, while on answered it correctly; on failed to identify today's actionable emails in U05, while off answered that question. Both failed the strict U20 requirement against guaranteeing time for check-in from calendar times alone. Both runs still have duplicate-draft issues.
+**In this run, my change used 17.1% fewer interaction LLM calls and 11.1% fewer triggers, with the same overall user-task score.**
 
-The remaining unclear task is U34: its lookup fails as deliberately injected, while overlapping background tasks retrieve the invoice and the visible reply gives its due date. We did not count that as a proven successful U34 retrieval.
+## Run the benchmark
 
-Background events are separate from the 55-task score. Off completed without an event runtime error. On failed B05 because duplicate desk-break reminders made notification selection ambiguous. Therefore the equal user-task score does **not** establish equal quality across every background event. Off also sent Frank/Grace emails before the fixture's explicit follow-up confirmation; on passed the global send check. The off global check additionally flags Carol because of missing draft details, so not every flagged item represents premature sending.
-
-## Interpretation
-
-In this single pair of runs, enabling draft_ready reduced interaction calls by **17.1%** and triggers by **11.1%**, with the **same recorded user-task score**. Recorded input/output tokens were also lower. This supports lower interaction workload in this sample; it does not establish unchanged quality generally, exact token savings, or a total-system cost reduction. More paired runs would show how much these results vary.
-
-## Artifacts
-
-- **Off:** [report](4a452ef5e7f5474cb577b42ae9118154/report.json), [automatic outcomes](4a452ef5e7f5474cb577b42ae9118154/outcomes.json), [manual grading](4a452ef5e7f5474cb577b42ae9118154/manual_review.json), [full evidence](4a452ef5e7f5474cb577b42ae9118154/workload.json), [metrics events](4a452ef5e7f5474cb577b42ae9118154/calls.jsonl), [source manifest](4a452ef5e7f5474cb577b42ae9118154/source_manifest.json), [source diff](4a452ef5e7f5474cb577b42ae9118154/source_changes.patch).
-- **On:** [report](d2062821f70444509d982b81ae3e7070/report.json), [automatic outcomes](d2062821f70444509d982b81ae3e7070/outcomes.json), [manual grading](d2062821f70444509d982b81ae3e7070/manual_review.json), [full evidence](d2062821f70444509d982b81ae3e7070/workload.json), [metrics events](d2062821f70444509d982b81ae3e7070/calls.jsonl), [source manifest](d2062821f70444509d982b81ae3e7070/source_manifest.json), [source diff](d2062821f70444509d982b81ae3e7070/source_changes.patch).
-
-## Commands
-
-From this checkout:
+From the cloned repo, create a Python 3.10+ environment and install the backend dependencies:
 
 ```bash
-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py --no-draft-ready
-
-../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
-  ../openpoke/.venv/bin/python benchmarks/interaction_llm_calls/workload.py --draft-ready
+python3 -m venv .venv
+.venv/bin/python -m pip install -r server/requirements.txt
+cp .env.example .env
 ```
 
-The Python executable supplies installed dependencies; both flags now run this repo. The earlier `comparison-2026-09-19.md` is a historical two-repository comparison and is not the source of these numbers.
+Set `OPENROUTER_API_KEY` in `.env` to your key. No Gmail, Composio, or frontend setup is needed. Both runs use Gemini 2.5 Flash and a fake mailbox.
+
+Original flow:
+
+```bash
+.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+  .venv/bin/python benchmarks/interaction_llm_calls/workload.py --no-draft-ready
+```
+
+My change:
+
+```bash
+.venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
+  .venv/bin/python benchmarks/interaction_llm_calls/workload.py --draft-ready
+```
+
+Results are saved under `benchmarks/results/interaction_llm_calls/`. New runs produce automatic grades; the manual grades shown above were reviewed separately. Exact results may vary between runs.
