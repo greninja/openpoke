@@ -11,12 +11,12 @@ OpenPoke is a simplified, open-source take on [Interaction Company’s](https://
 
 See [Changes in this fork](changes_in_this_fork.md) for the approach, implementation, benchmarks, tradeoffs, and architecture diagrams.
 
+For the benchmark only, follow [these steps](benchmarks/results/interaction_llm_calls/comparison-2026-09-19.md#run-the-benchmark). You need Python and an OpenRouter key; Node.js and Gmail setup are not required.
+
 ## Requirements
 - Python 3.10+
 - Node.js 18+
 - npm 9+
-
-For the benchmark only, follow [these steps](benchmarks/results/interaction_llm_calls/comparison-2026-09-19.md#run-the-benchmark). You need Python and an OpenRouter key; Node.js and Gmail setup are not required.
 
 ## Quickstart
 1. **Clone and enter the repo.**
