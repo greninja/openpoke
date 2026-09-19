@@ -2,27 +2,27 @@
 
 ## 1. What does “overload” mean?
 
-I treated overload as unnecessary work passing through the interaction LLM. My goal was to remove predictable, structured work from it while preserving task correctness. I expected this to reduce token usage as well.
+I focused on overload caused by unnecessary work passing through the interaction agent’s LLM. I followed a simple principle: the interaction agent should mostly route work, while predictable, structured, or computational tasks should happen inside an execution agent or regular backend code. My goal was to remove that unnecessary work while preserving task correctness and reducing token usage.
 
 ## 2. How did I reduce it?
 
-Initially, every completed email draft was sent back to the interaction agent. Its LLM then called `send_draft` to display the same draft to the user, adding an unnecessary LLM call and round trip.
+I targeted a narrow but common scenario: displaying completed email drafts for review. Initially, every completed draft was sent back to the interaction agent, whose LLM then called `send_draft` to display the same content to the user. This added an unnecessary LLM call and round trip.
 
-I targeted this narrow but common scenario. The execution agent now returns a `draft_ready` result, and a backend **Draft Delivery Service** displays the draft directly instead of routing it through the interaction agent and its LLM. The service still saves the draft and its ID in the interaction agent’s conversation history, so follow-up questions, revisions, and approvals continue to work. Displaying a draft does **not** send the email. Removing this round trip saves time and model cost, which can add up quickly for a frequently used workflow like email.
+The execution agent now returns a `draft_ready` result, and a backend **Draft Delivery Service** displays the draft directly. The service still saves the draft and its ID in the interaction agent’s conversation history, so follow-up questions, revisions, and approvals continue to work. Displaying a draft does **not** send the email. Removing this round trip saves time and model cost, which can add up quickly for a frequently used workflow like email.
 
 ## 3. How did I measure improvement?
 
 I measured the interaction agent’s workload using:
 
-1. Interaction-agent triggers/turns and LLM calls.
-2. Input/output tokens.
-3. Task outcomes.
+1. triggers/turns and LLM calls -- how many times the interaction agent was trigged/invoked and how many times it;s LLM was called
+2. Input/output tokens -- that passes to and fro from the interaction agent LLM
+3. Task outcomes -- some automated checks, some manual checks
 
-Lower values indicate less interaction-agent work, as long as task completion and quality remain the same.
+Lower values indicate less interaction-agent work, as long as task completion and quality remain the same because one can always lower the LLM calls or workload at the expense of reduction in quality/user experience.
 
 I created a [reproducible benchmark of 55 user tasks](benchmarks/results/interaction_llm_calls/comparison-same-repo-2026-09-19.md) to measure this. It switches direct draft delivery on or off.
 
-Using Gemini 2.5 Flash across 55 user tasks, direct delivery reduced interaction LLM calls from **123 to 102 (17.1%)** and triggers from **99 to 88 (11.1%)**. Both runs recorded **36 passes, 18 failures, and 1 unclear task**. See the [comparison and reproduction steps](benchmarks/results/interaction_llm_calls/comparison-same-repo-2026-09-19.md).
+Using Gemini 2.5 Flash across 55 user tasks, direct delivery (my approach) reduced interaction LLM calls from **123 to 102 (17.1%)** and triggers from **99 to 88 (11.1%)**. Both runs recorded **36 passes, 18 failures, and 1 unclear task**. See the [comparison and reproduction steps](benchmarks/results/interaction_llm_calls/comparison-same-repo-2026-09-19.md).
 
 ## Before
 
@@ -32,7 +32,7 @@ Completed drafts return to the interaction LLM before being shown to the user.
 
 ## With direct draft delivery
 
-The teal path shows the new backend service displaying drafts and saving their context. Other results still go through the interaction agent.
+The teal path shows the new backend service displaying drafts and saving their context. Other results requiring LLM's subjective analysis still go through the interaction agent.
 
 ![OpenPoke architecture with direct draft delivery](docs/images/architecture-draft-ready.png)
 
