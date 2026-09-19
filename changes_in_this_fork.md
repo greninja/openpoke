@@ -50,14 +50,14 @@ I also tried structuring other information passed between agents, but email draf
 
 I also tested [execution-agent roster shortlisting](https://github.com/greninja/openpoke/tree/feature/roster-shortlisting). Instead of giving the interaction LLM the full agent roster on every turn, this approach provides a shortlist of recently used agents, agents matching the current message, and agents returning results during that turn. The interaction agent can still request the full roster. The [original OpenPoke write-up](https://www.shloked.com/openpoke) also proposed this idea.
 
-In one paired Gemini 2.5 Flash Lite run, shortlisting reduced recorded tokens from **1,305,202 to 978,450**, about **25%**. Some successful calls had no usage data, so this is an observed reduction rather than a complete cost measurement. The shortlist run also created more agents and had worse automated correctness results. This showed that smaller prompts can reduce workload, but routing quality must be protected too.
+In one paired Gemini 2.5 Flash Lite run, shortlisting reduced recorded tokens from **1,305,202 to 978,450**, about **25%**.
 
-That experiment also fixed a missing implementation for requesting the full roster, stopped unrelated agent reuse from changing agent categories, and corrected counters that measured the final roster instead of successful agent-creation events.
+But the write-up for that experiment isn't as detailed as this (email draft) one, partly because I was running into more issues than it solved. For e.g., in one of the runs, it created more agents and had worse automated correctness results. This showed that smaller prompts can reduce workload, but routing quality must be protected too.
 
 #### Other options considered
 
-I also considered splitting the interaction agent into specialized sub-agents and adding a shared queue or concurrency limit. I did not pursue these options because they add coordination or restrict throughput without directly removing the reasoning work.
+I also considered splitting the interaction agent into specialized sub-agents and adding a shared queue or concurrency limit. I did not pursue these options because they add coordination issues which might have been a bit messy to deal with in short time.
 
 #### Other notes
 
-I also tightened the agent loops: they stop after successful delegation or waiting, avoid identical repeated tool actions within a turn, recognize tool errors, and retry when the model describes a tool call without actually making one.
+I also stumbled on a few bugs in the agent loops: they continued running after successful delegation or waiting, repeated identical tool actions within a turn, failed to recognize some tool errors, and sometimes accepted a model’s description of a tool call without the call actually being made. I fixed these issues as part of the implementation.
