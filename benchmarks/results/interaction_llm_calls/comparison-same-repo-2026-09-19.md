@@ -1,15 +1,17 @@
-# Benchmark comparison — September 19, 2026
+# Benchmark comparison
 
 - **Original flow:** the interaction LLM receives completed drafts and displays them through `send_draft`.
-- **My change:** `draft_ready` lets the backend display completed drafts directly, without that extra LLM step.
+- **Our change:** `draft_ready` lets the backend display completed drafts directly, without that extra LLM step.
 
 Both runs used **the same code in this repo**, with only draft delivery switched. All model settings used `google/gemini-2.5-flash`.
 
+We treated overload as work passing through the interaction LLM unnecessarily. Draft delivery is a clear case: once Gmail has created a complete, structured draft, another LLM does not need to reconstruct the same information before showing it to the user. The benchmark checks whether removing that step reduces interaction-agent work without lowering the recorded task score.
+
 The [workload](../../sample_workload.json) contains **55 user tasks and 7 background events**. Both runs attempted all 62 events using a fake mailbox. No real emails were sent.
 
-## Interaction workload
+## Results (on our benchmark)
 
-| Metric | Original flow | My change | Reduction |
+| Metric | Original flow | Our change | Reduction |
 |---|---:|---:|---:|
 | Interaction-agent triggers | 99 | 88 | 11.1% |
 | Triggers from user messages | 55 | 55 | 0.0% |
@@ -30,7 +32,7 @@ Each user task has an expected outcome in the workload file. Automatic checks co
 
 Codex then reviewed the unclear tasks using the saved replies and actions. Each decision and its reason is recorded in `manual_review.json`.
 
-| Result out of 55 user tasks | Original flow | My change |
+| Result out of 55 user tasks | Original flow | Our change |
 |---|---:|---:|
 | PASS | 36 | 36 |
 | FAIL | 18 | 18 |
@@ -38,7 +40,7 @@ Codex then reviewed the unclear tasks using the saved replies and actions. Each 
 
 In each run, automatic checks gave 15 passes, 12 failures, and 28 tasks for review. Manual review added 21 passes and 6 failures, leaving 1 unclear.
 
-**In this run, my change used 17.1% fewer interaction LLM calls and 11.1% fewer triggers, with the same overall user-task score.**
+**In this run, our change used 17.1% fewer interaction LLM calls and 11.1% fewer triggers, with the same overall user-task score.**
 
 ## Run the benchmark
 
@@ -50,7 +52,7 @@ python3 -m venv .venv
 cp .env.example .env
 ```
 
-Set `OPENROUTER_API_KEY` in `.env` to your key. No Gmail, Composio, or frontend setup is needed. Both runs use Gemini 2.5 Flash and a fake mailbox.
+Set `OPENROUTER_API_KEY` in `.env` to your key. No Gmail, Composio, or frontend setup is needed. Both runs use Gemini 2.5 Flash and a [fake mailbox initialized from this sample inbox](../../sample_inbox.json).
 
 Original flow:
 
@@ -59,7 +61,7 @@ Original flow:
   .venv/bin/python benchmarks/interaction_llm_calls/workload.py --no-draft-ready
 ```
 
-My change:
+Our change:
 
 ```bash
 .venv/bin/python benchmarks/interaction_llm_calls/runner.py -- \
