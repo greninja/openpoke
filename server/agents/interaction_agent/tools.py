@@ -8,6 +8,7 @@ from typing import Any, Optional
 from ...logging_config import logger
 from ...services.conversation import get_conversation_log
 from ...services.execution import get_agent_roster, get_execution_agent_logs
+from ...services.execution.selection import CATEGORY_KEYWORDS
 from ..execution_agent.batch_manager import ExecutionBatchManager
 
 
@@ -25,16 +26,53 @@ TOOL_SCHEMAS = [
     {
         "type": "function",
         "function": {
+            "name": "get_full_roster",
+            "description": (
+                "Return every existing execution-agent name when the visible shortlist "
+                "does not show a likely match and a hidden existing agent may fit."
+            ),
+            "parameters": {
+                "type": "object", "properties": {}, "additionalProperties": False
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "send_message_to_agent",
-            "description": "Deliver instructions to a specific execution agent. Creates a new agent if the name doesn't exist in the roster, or reuses an existing one.",
+            "description": (
+                "Deliver instructions to an execution agent. An exact existing name reuses "
+                "that agent. A specific new name proposes creating an agent for that "
+                "responsibility; broad new names such as 'Email Assistant' or 'Inbox "
+                "Summarizer' are invalid. Use get_full_roster first only when a hidden "
+                "existing agent may already have the right responsibility."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
                     "agent_name": {
                         "type": "string",
-                        "description": "Human-readable agent name describing its purpose (e.g., 'Vercel Job Offer', 'Email to Sharanjeet'). This name will be used to identify and potentially reuse the agent."
+                        "description": (
+                            "Exact existing name for a true follow-up, or a new specific name "
+                            "that includes the subject, person, thread, or job (for example, "
+                            "'Vercel Job Offer' or 'Email to Sharanjeet')."
+                        )
                     },
-                    "instructions": {"type": "string", "description": "Instructions for the agent to execute."},
+                    "instructions": {
+                        "type": "string",
+                        "description": "Instructions for the agent to execute.",
+                    },
+                    "categories": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": ["email", "travel", "finance", "calendar"],
+                        },
+                        "description": (
+                            "Categories for a proposed new agent; multiple allowed. "
+                            "Ignored when reusing an existing agent."
+                        ),
+                    },
                 },
                 "required": ["agent_name", "instructions"],
                 "additionalProperties": False,
@@ -108,9 +146,27 @@ TOOL_SCHEMAS = [
 _EXECUTION_BATCH_MANAGER = ExecutionBatchManager()
 
 
+def get_full_roster() -> ToolResult:
+    """Return the complete roster without creating or dispatching an agent."""
+    roster = get_agent_roster()
+    roster.load()
+    return ToolResult(success=True, payload={
+        "status": "full_roster_returned",
+        "agents": roster.get_agents(),
+    })
+
+
 # Create or reuse execution agent and dispatch instructions asynchronously
-def send_message_to_agent(agent_name: str, instructions: str) -> ToolResult:
+def send_message_to_agent(agent_name: str, instructions: str, categories=None) -> ToolResult:
     """Send instructions to an execution agent."""
+    if categories is not None and (
+        not isinstance(categories, list)
+        or any(
+            not isinstance(category, str) or category not in CATEGORY_KEYWORDS
+            for category in categories
+        )
+    ):
+        return ToolResult(success=False, payload={"error": "Invalid categories"})
     roster = get_agent_roster()
     roster.load()
     existing_agents = set(roster.get_agents())
@@ -119,6 +175,7 @@ def send_message_to_agent(agent_name: str, instructions: str) -> ToolResult:
     if is_new:
         roster.add_agent(agent_name)
 
+    roster.mark_used(agent_name, instructions, categories)
     get_execution_agent_logs().record_request(agent_name, instructions)
 
     action = "Created" if is_new else "Reused"
@@ -145,7 +202,6 @@ def send_message_to_agent(agent_name: str, instructions: str) -> ToolResult:
         payload={
             "status": "submitted",
             "agent_name": agent_name,
-            "new_agent_created": is_new,
         },
     )
 
@@ -227,6 +283,8 @@ def handle_tool_call(name: str, arguments: Any) -> ToolResult:
 
         if name == "send_message_to_agent":
             return send_message_to_agent(**args)
+        if name == "get_full_roster":
+            return get_full_roster(**args)
         if name == "send_message_to_user":
             return send_message_to_user(**args)
         if name == "send_draft":

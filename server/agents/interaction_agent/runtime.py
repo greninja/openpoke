@@ -4,9 +4,15 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set
 
-from .agent import build_system_prompt, prepare_message_with_history
+from .agent import (
+    build_system_prompt,
+    get_active_agent_details,
+    prepare_message_with_history,
+)
 from .tools import ToolResult, get_tool_schemas, handle_tool_call
 from ...config import get_settings
+from ...services.execution import get_agent_roster
+from ...services.execution.selection import categories_for, is_specific_agent_name
 from ...services.conversation import get_conversation_log, get_working_memory_log
 from ...openrouter_client import request_chat_completion
 from ...logging_config import logger
@@ -70,8 +76,12 @@ class InteractionAgentRuntime:
             self.conversation_log.record_user_message(user_message)
 
             system_prompt = build_system_prompt()
+            active_agents = self._active_agent_details(user_message, "user")
             messages = prepare_message_with_history(
-                user_message, transcript_before, message_type="user"
+                user_message,
+                transcript_before,
+                message_type="user",
+                active_agents=active_agents,
             )
 
             logger.info("Processing user message through interaction agent")
@@ -105,8 +115,12 @@ class InteractionAgentRuntime:
             self.conversation_log.record_agent_message(agent_message)
 
             system_prompt = build_system_prompt()
+            active_agents = self._active_agent_details(agent_message, "agent")
             messages = prepare_message_with_history(
-                agent_message, transcript_before, message_type="agent"
+                agent_message,
+                transcript_before,
+                message_type="agent",
+                active_agents=active_agents,
             )
 
             logger.info("Processing execution agent results")
@@ -189,6 +203,14 @@ class InteractionAgentRuntime:
             logger.warning("Interaction loop exited without assistant content")
 
         return summary
+
+    def _active_agent_details(
+        self, latest_text: str, message_type: str
+    ) -> Optional[List[Dict[str, object]]]:
+        """Build one roster view for the current interaction turn."""
+        if not self.settings.roster_shortlisting_enabled:
+            return None
+        return get_active_agent_details(latest_text, message_type)
 
     # Load conversation history, preferring summarized version if available
     def _load_conversation_transcript(self) -> str:
@@ -291,6 +313,60 @@ class InteractionAgentRuntime:
             error = tool_call.arguments["__invalid_arguments__"]
             self._log_tool_invocation(tool_call, stage="rejected", detail={"error": error})
             return ToolResult(success=False, payload={"error": error})
+
+        if (
+            self.settings.roster_shortlisting_enabled
+            and tool_call.name == "send_message_to_agent"
+        ):
+            roster = get_agent_roster()
+            roster.load()
+            agents = roster.get_agents()
+            requested_name = tool_call.arguments.get("agent_name")
+
+            if requested_name in agents:
+                agent_categories = set(roster.get_categories(requested_name))
+                instruction_categories = set(
+                    categories_for(
+                        str(tool_call.arguments.get("instructions") or "")
+                    )
+                )
+                missing_categories = sorted(
+                    instruction_categories - agent_categories
+                )
+                if agent_categories and missing_categories:
+                    return ToolResult(
+                        success=False,
+                        payload={
+                            "error": (
+                                "Existing agent responsibility does not cover this task."
+                            ),
+                            "requested_agent": requested_name,
+                            "agent_categories": sorted(agent_categories),
+                            "task_categories": sorted(instruction_categories),
+                            "missing_categories": missing_categories,
+                            "next_step": (
+                                "Choose another suitable existing agent or propose a "
+                                "new specific agent name for this responsibility."
+                            ),
+                        },
+                    )
+
+            if requested_name not in agents and not is_specific_agent_name(
+                requested_name
+            ):
+                return ToolResult(
+                    success=False,
+                    payload={
+                        "error": "New agent name is too broad.",
+                        "requested_agent": requested_name,
+                        "next_step": (
+                            "Choose a concrete responsibility name containing the "
+                            "subject, person, thread, or job, such as 'Alice Meeting "
+                            "Email', 'Acme Invoice Search', or 'Tomorrow Flight "
+                            "Details', then retry."
+                        ),
+                    },
+                )
 
         try:
             self._log_tool_invocation(tool_call, stage="start")

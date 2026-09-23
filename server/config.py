@@ -57,6 +57,8 @@ class Settings(BaseModel):
     summarizer_model: str = Field(default="anthropic/claude-sonnet-4")
     email_classifier_model: str = Field(default="anthropic/claude-sonnet-4")
 
+    roster_shortlisting_enabled: bool = Field(default=os.getenv("OPENPOKE_ROSTER_SHORTLIST", "1") != "0")
+
     # Credentials / integrations
     openrouter_api_key: Optional[str] = Field(default=os.getenv("OPENROUTER_API_KEY"))
     composio_gmail_auth_config_id: Optional[str] = Field(default=os.getenv("COMPOSIO_GMAIL_AUTH_CONFIG_ID"))
